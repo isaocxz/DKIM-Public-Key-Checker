@@ -97,21 +97,21 @@ RSA Public Key
 
 Validation results use four states:
 
-  -----------------------------------------------------------------------
-  Status                              Meaning
-  ----------------------------------- -----------------------------------
-  `PASS`                              The check succeeded.
+  ---------------------------------------------------------------------
+  Status                             Meaning
+  ---------------------------------- ----------------------------------
+  `PASS`                             The check succeeded.
 
-  `WARN`                              The record remains usable, but
-                                      there is a security or
-                                      interoperability concern.
+  `WARN`                             The record remains usable, but
+                                     there is a security or
+                                     interoperability concern.
 
-  `FAIL`                              The record does not satisfy the
-                                      required validation condition.
+  `FAIL`                             The record does not satisfy the
+                                     required validation condition.
 
-  `INFO`                              Informational result that does not
-                                      affect the overall result.
-  -----------------------------------------------------------------------
+  `INFO`                             Informational result that does not
+                                     affect the overall result.
+  ---------------------------------------------------------------------
 
 The overall result is:
 
@@ -210,6 +210,29 @@ The SOA query is performed through the selected recursive resolver. The
 checker does not query the SOA MNAME authoritative server directly.
 
 ## DNS Limitations
+
+### Why DNS over HTTPS?
+
+This tool runs entirely in a web browser. Web browsers cannot send
+standard DNS queries directly over UDP or TCP port 53.
+
+DNS over HTTPS (DoH) allows the browser to send DNS wire-format queries
+over HTTPS, making DNS lookups possible without a backend server.
+
+The selected DoH service acts as a recursive resolver. It performs the
+actual DNS resolution and queries the authoritative DNS servers as
+necessary.
+
+``` text
+Browser
+   ↓ HTTPS / DoH
+Recursive DNS resolver
+   ↓ UDP/TCP DNS
+Authoritative DNS servers
+```
+
+DoH is therefore used as a **browser transport mechanism**, not because
+the authoritative DNS servers themselves support DoH.
 
 This is a browser-only application.
 
