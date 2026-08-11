@@ -171,6 +171,40 @@ The current policy is:
 This reflects RFC 8301: RSA keys below 1024 bits are prohibited, while
 2048 bits or greater are recommended.
 
+
+## Ed25519 Support
+
+DKIM supports both RSA and Ed25519 public keys. Ed25519 support is defined by RFC 8463.
+
+This checker currently validates **RSA (`k=rsa`) public keys only**.  
+Support for **Ed25519 (`k=ed25519`) is planned but not yet implemented**.
+
+The public-key validation paths differ as follows:
+
+```text
+                DKIM p=
+                   │
+           Base64 decode
+                   │
+         ┌─────────┴─────────┐
+         │                   │
+       k=rsa             k=ed25519
+         │                   │
+        SPKI              32 bytes?
+         │                   │
+        RSA               PASS/FAIL
+     ┌───┴───┐
+  modulus   exponent
+     │
+ key length
+```
+
+For RSA, the decoded `p=` value contains a DER-encoded SubjectPublicKeyInfo (SPKI) structure.
+
+For Ed25519, RFC 8463 defines `p=` as the Base64 encoding of the 32-byte (256-bit) Ed25519 public key. SPKI parsing is therefore not required.
+
+**TODO:** Add `k=ed25519` validation by checking Base64 decoding and the required 32-byte public-key length.
+
 ## DNSSEC
 
 DNS Lookup mode sends an EDNS(0) query with the **DO (DNSSEC OK)**
@@ -267,6 +301,7 @@ The checker is primarily based on:
 
 -   RFC 6376 --- DomainKeys Identified Mail (DKIM) Signatures
 -   RFC 8301 --- Cryptographic Algorithm and Key Usage Update to DKIM
+-   RFC 8463 --- A New Cryptographic Signature Method for DKIM
 -   RFC 8484 --- DNS Queries over HTTPS (DoH)
 -   RFC 6891 --- Extension Mechanisms for DNS (EDNS(0))
 
