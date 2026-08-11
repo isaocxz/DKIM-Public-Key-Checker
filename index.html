@@ -227,7 +227,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
  */
 const $ = id => document.getElementById(id);
 
-const DIRECT_SOURCE = "Direct TXT input";
+const TXT_RECORD_SOURCE = "TXT Record mode";
 const KNOWN_DKIM_TAGS = new Set(["v","h","k","n","p","s","t"]);
 
 function showError(prefix, error) {
@@ -237,7 +237,7 @@ function showError(prefix, error) {
 }
 
 function isDnsSource(meta) {
-  return Boolean(meta.source && meta.source !== DIRECT_SOURCE);
+  return Boolean(meta.source && meta.source !== TXT_RECORD_SOURCE);
 }
 
 function showMode(mode) {
@@ -831,7 +831,7 @@ async function analyze(record, meta={}) {
       overallResult === "FAIL" ? "fail" :
       overallResult === "PASS (Warnings)" ? "warn" : "pass"
     );
-    $("source").textContent = meta.source || DIRECT_SOURCE;
+    $("source").textContent = meta.source || TXT_RECORD_SOURCE;
 
     // Browser-local timestamp: records when this validation was performed.
     $("checkedAt").textContent = new Date().toLocaleString(undefined, {
@@ -1221,7 +1221,7 @@ async function dnsLookup() {
 }
 
 $("dnsCheck").onclick = dnsLookup;
-$("txtCheck").onclick = () => analyze($("txtInput").value, {source:DIRECT_SOURCE});
+$("txtCheck").onclick = () => analyze($("txtInput").value, {source:TXT_RECORD_SOURCE});
 $("fqdn").addEventListener("keydown", e => { if(e.key==="Enter") dnsLookup(); });
 </script>
 </body>

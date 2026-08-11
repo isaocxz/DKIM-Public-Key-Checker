@@ -10,7 +10,7 @@ and usable.
 ## Features
 
 -   Two input modes:
-    -   **DNS / Selector mode** --- retrieves the DKIM TXT record
+    -   **DNS Lookup mode** --- retrieves the DKIM TXT record
         through a selectable public DNS-over-HTTPS resolver.
     -   **TXT Record mode** --- validates pasted TXT record data without
         making a DNS query.
@@ -34,7 +34,7 @@ and usable.
 Open `index.html` in a modern browser, or publish it as a static site
 such as GitHub Pages.
 
-### DNS / Selector mode
+### DNS Lookup mode
 
 Enter the complete DKIM DNS name:
 
@@ -173,7 +173,7 @@ This reflects RFC 8301: RSA keys below 1024 bits are prohibited, while
 
 ## DNSSEC
 
-DNS / Selector mode sends an EDNS(0) query with the **DO (DNSSEC OK)**
+DNS Lookup mode sends an EDNS(0) query with the **DO (DNSSEC OK)**
 bit set.
 
 The checker then reads the **AD (Authenticated Data)** bit returned by
@@ -237,7 +237,7 @@ the authoritative DNS servers themselves support DoH.
 This is a browser-only application.
 
 Web browsers cannot send arbitrary UDP/TCP DNS queries to port 53.
-Therefore, DNS / Selector mode must use DNS over HTTPS and cannot
+Therefore, DNS Lookup mode must use DNS over HTTPS and cannot
 directly query an authoritative DNS server.
 
 The actual path is:
@@ -258,7 +258,7 @@ obtained from local tools such as `nslookup`, `Resolve-DnsName`, or
 
 TXT Record mode is processed locally in the browser.
 
-DNS / Selector mode sends the requested DNS name to the selected public
+DNS Lookup mode sends the requested DNS name to the selected public
 DNS resolver. No separate application backend is used.
 
 ## Standards
@@ -286,11 +286,22 @@ Those functions are outside the scope of this checker.
 
 ## Requirements
 
-A modern browser with:
+A current version of Chrome, Edge, Firefox, or Safari is recommended.
+
+### DNS Lookup mode
+
+Requires:
 
 -   Web Crypto API
 -   `fetch()`
--   DNS-over-HTTPS connectivity for DNS / Selector mode
+-   Direct HTTPS access to the selected DoH resolver
 
-No installation, server-side runtime, or external JavaScript library is
-required.
+### TXT Record mode
+
+Requires:
+
+-   Web Crypto API
+
+No DNS or network access is required.
+
+No installation, server-side runtime, or external JavaScript library is required.
