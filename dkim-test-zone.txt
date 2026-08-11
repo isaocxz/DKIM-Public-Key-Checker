@@ -1,0 +1,73 @@
+; DKIM Public Key Checker - Unit Test Zone
+; BIND-style zone file suitable for Route 53 "Import zone file".
+;
+; IMPORTANT:
+;   Replace example.com. with the hosted zone name before import,
+;   or import into an example.com test zone.
+;   SOA and NS records are intentionally omitted.
+;
+$ORIGIN example.com.
+$TTL 3600
+
+single-string._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8tyXBnkIg6gDiTaLopCQo9G+tbQ1TzrPqmYrdqNqRn0ubR18ChjJx3Os5YgXngb5Ltp+Lm+jELTPk669ejPXkbFwwCVQV5nrzLuIiTSl0Rsn90xcNm88lKPEZz05MhYlXBlkEP7S1p0v4eGOmhzRvXyAmb2+Mgtr7F2N7fc+R4wIDAQAB"
+
+multi-string._domainkey 3600 IN TXT (
+  "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnjixPCb3MwVP/oC91Oz1ogcPtW7qdtI5tGTE3qyer8aSs0bR6RcLL99kntHw5yxxRzT5Nco3LKvQ2wxXgYkk4529++eW0i8ziivBOKA5dKp9hxj99ery/UGad5MLTHx5F60wuG5K6mQRAOBrADJ0DFE8FNW2VU0tpLlaREi4Iwp/UQ3e"
+  "bli+AjaF9/Stsaz6d/jH9sgBPQbofu3AtiFim0rQA88Ui8QYlz8TGorvckvSYZoSYCPS6YeQT6sFqdPAIjyIyr5DNfDTiNa+QZnxgL0r159jRsa5sf3G3m7bJu+0SpQf6+S1W+UIEAqtwLjqr/A88NTBnGnnDbUXaQSYwQIDAQAB"
+)
+
+multi-rr._domainkey 3600 IN TXT (
+  "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAucmPyEUFjpXsBrbHOr1iR3AzPc1cEzzE8hIva4SWKIa4W3y0e3CpeX2gRP0iMaWjXLM9CMB0Vnubv+w1+Rss3YfNYtxjnN6SsoXTKFL0uRndeMqERfctwt1RjHOdQKxskdV6nXAAK1lsZS+naIzhD7BQQwEBpa2gHxVz/aJBb74NJCoX"
+  "HmdBvbNsWznDwwGUfM+igvyMih8MsSMdHU8jwtv/NzlWamya7MMqM/H8O7TKjmmjYjym0F4xeNyDVYjwAVnqjc9YKq1XMC+9miOEAguHJq8T9Kuk2MgPoedzu/q3pNZwGLRKVxyQDtz3d8rNFJvjP8DQfvf7Z39uy3Xn/QIDAQAB"
+)
+multi-rr._domainkey 3600 IN TXT (
+  "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2VFgqKKg/ALwXQPR0qfXDa3ZkkXLTcIpO+X8DB2nHe6XdNsCNjZEdNb1ZOrFhu08sQUYI2JJNJuu6ErEgStOCHmlpXslgK7XbO3/h+K3BVG0tHThd7moXShTMYhnI9pIzP7zz7vfezj61aVcQva7SsHismvuV9hKQ0cOKYaPeVd7Txfs"
+  "CIRAtbyX6OpczvaB2SwWu+NvOpS7H6j/d7w1Om1uwwGw6/4jdFf9Vfbqno33QNd6SFq7E/pz5qFTuBo7TTM/RSQNwafgbkxnCc2D69+zZBphUzB2i26hyouqL0bw0mfx3TSDMveP15GZd/MT29fqK7mFiOBnNXQIWRHwZwIDAQAB"
+)
+
+revoked._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p="
+
+rsa512._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALQEMgamyGXdY1iP7aOf2JpnaClngwp5cgKsFFffrLU3NetE6VagGkZZimMvVHyU6V9I8of8eDTnRSQMao3DlcECAwEAAQ=="
+
+rsa2048._domainkey 3600 IN TXT (
+    "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+    "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+    "RMpwIDAQAB"
+)
+
+rsa1024._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc0p6wpQgE8VIGM+Li7k0Rcfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB"
+
+missing-p._domainkey 3600 IN TXT "v=DKIM1; k=rsa"
+
+invalid-base64._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=!!!INVALID!!!"
+
+invalid-key._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=VGhpcyBpcyB2YWxpZCBCYXNlNjQgZGF0YSwgYnV0IGl0IGlzIG5vdCBhbiBTUEtJIHB1YmxpYyBrZXku"
+
+duplicate-p._domainkey 3600 IN TXT (
+    "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc0p6wpQgE8VIGM+Li7k0R"
+    "cfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc"
+    "0p6wpQgE8VIGM+Li7k0Rcfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB"
+)
+
+invalid-version._domainkey 3600 IN TXT (
+    "v=DKIM2; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+    "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+    "RMpwIDAQAB"
+)
+
+version-not-first._domainkey 3600 IN TXT (
+    "k=rsa; v=DKIM1; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+    "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+    "RMpwIDAQAB"
+)
+
+default-tags._domainkey 3600 IN TXT (
+    "p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+YAvCR1SCFOZTGDnLd"
+    "zBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/RMpwIDAQAB"
+)
+
+unknown-tag._domainkey 3600 IN TXT (
+    "v=DKIM1; k=rsa; x-unit-test=example; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHB"
+    "bchqmusRoVEQUnIiDXq+YAvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINN"
+    "SuKW4E1cCeSVA8zbPTtQ/RMpwIDAQAB"
+)
