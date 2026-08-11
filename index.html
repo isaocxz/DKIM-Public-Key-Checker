@@ -163,7 +163,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
         <div class="label">TXT RRs</div><div id="txtRrs" class="value"></div>
         <div class="label">TXT character-strings</div><div id="txtChunks" class="value"></div>
         <div class="label">p= chunks</div><div id="pChunks" class="value"></div>
-        <div class="label">DNSSEC</div><div id="dnssec" class="value"></div>
+        <div class="label">DNSSEC validation</div><div id="dnssec" class="value"></div>
       </div>
       <h4>Raw TXT character-strings</h4>
       <pre id="rawChunks"></pre>
@@ -411,7 +411,7 @@ const VALIDATION_DESCRIPTIONS = {
   "TXT record":"Checks whether a TXT record is available.",
   "TXT RRs":"Checks that exactly one TXT RR exists.",
   "TXT character-strings":"Counts character-strings in the selected TXT RR.",
-  "DNSSEC":"Shows the resolver DNSSEC authentication result.",
+  "DNSSEC":"Shows the selected resolver DNSSEC validation result from the AD bit.",
   "RFC tag-list syntax":"Checks RFC 6376 tag=value list syntax.",
   "Duplicate tags":"Checks that DKIM tags are not duplicated.",
   "v= version":"Checks the DKIM key-record version.",
@@ -916,18 +916,36 @@ function encodeDnsName(name) {
  */
 function buildDnsQuery(name, qtype) {
   const qname = encodeDnsName(name);
-  const buf = new Uint8Array(12 + qname.length + 4);
+
+  /*
+   * Add an EDNS(0) OPT pseudo-RR and set DO (DNSSEC OK).
+   * This asks the recursive resolver to include DNSSEC data and allows us to
+   * use the response AD bit as the resolver's DNSSEC validation result.
+   *
+   * This checker does not validate RRSIG/DNSKEY itself.
+   */
+  const questionLength = qname.length + 4;
+  const optLength = 11;
+  const buf = new Uint8Array(12 + questionLength + optLength);
   const v = new DataView(buf.buffer);
   const id = crypto.getRandomValues(new Uint16Array(1))[0];
 
   v.setUint16(0,id);
   v.setUint16(2,0x0100); // RD = Recursion Desired
   v.setUint16(4,1);      // QDCOUNT = 1
+  v.setUint16(10,1);     // ARCOUNT = 1 (EDNS OPT)
 
   buf.set(qname,12);
-  const o=12+qname.length;
-  v.setUint16(o,qtype);
-  v.setUint16(o+2,1);    // QCLASS = IN
+  let o=12+qname.length;
+  v.setUint16(o,qtype); o+=2;
+  v.setUint16(o,1);     o+=2; // QCLASS = IN
+
+  // RFC 6891 OPT pseudo-RR.
+  buf[o++]=0;            // root owner name
+  v.setUint16(o,41); o+=2;    // TYPE = OPT
+  v.setUint16(o,1232); o+=2;  // UDP payload size (informational for DoH)
+  v.setUint32(o,0x00008000); o+=4; // extended RCODE/version + DO=1
+  v.setUint16(o,0);             // RDLEN = 0
 
   return {buf,id};
 }
@@ -1191,7 +1209,7 @@ async function dnsLookup() {
       name:selected.name || name,
       type:"TXT",
       ttl:selected.ttl,
-      dnssec:parsed.ad ? "Secure (AD=true)" : "Not authenticated (AD=false)",
+      dnssec:parsed.ad ? "Secure (resolver AD=true)" : "Not authenticated (resolver AD=false)",
       txtRrCount:parsed.answers.length,
       soa,
       rawChunks:selected.chunks
