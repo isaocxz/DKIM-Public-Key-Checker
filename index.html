@@ -77,6 +77,8 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
 .validation-group-title{font-size:14px;font-weight:800;margin:0 0 4px;padding-bottom:7px;border-bottom:2px solid #ddd}
 .details-title{font-size:20px;font-weight:800;margin:30px 0 12px;padding-top:22px;border-top:2px solid #222}
 .detail-kicker{font-size:12px;font-weight:800;color:#666;letter-spacing:.06em;margin-bottom:5px}
+.site-footer{text-align:center;color:#666;font-size:13px;margin:22px 0 36px}
+.site-footer a{color:inherit}
 </style>
 </head>
 <body>
@@ -163,7 +165,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
         <div class="label">TXT RRs</div><div id="txtRrs" class="value"></div>
         <div class="label">TXT character-strings</div><div id="txtChunks" class="value"></div>
         <div class="label">p= chunks</div><div id="pChunks" class="value"></div>
-        <div class="label">DNSSEC validation</div><div id="dnssec" class="value"></div>
+        <div class="label">DNSSEC Status (Resolver AD Bit)</div><div id="dnssec" class="value"></div>
       </div>
       <h4>Raw TXT character-strings</h4>
       <pre id="rawChunks"></pre>
@@ -214,6 +216,10 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
   </div>
 
   <div id="errbox" class="card hidden"><div id="error" class="error"></div></div>
+
+  <footer class="site-footer">
+    <a href="https://github.com/isaocxz/DKIM-Public-Key-Checker">Source code on GitHub</a>
+  </footer>
 </div>
 
 <script>
@@ -464,7 +470,7 @@ const VALIDATION_DESCRIPTIONS = {
   "TXT record":"Checks whether a TXT record is available.",
   "TXT RRs":"Checks that exactly one TXT RR exists.",
   "TXT character-strings":"Counts character-strings in the selected TXT RR.",
-  "DNSSEC":"Shows the selected resolver DNSSEC validation result from the AD bit.",
+  "DNSSEC":"Shows DNSSEC status reported by the selected resolver's AD bit.",
   "RFC tag-list syntax":"Checks RFC 6376 tag=value list syntax.",
   "Duplicate tags":"Checks that DKIM tags are not duplicated.",
   "v= version":"Checks the DKIM key-record version.",
@@ -1045,7 +1051,7 @@ function buildDnsQuery(name, qtype) {
   /*
    * Add an EDNS(0) OPT pseudo-RR and set DO (DNSSEC OK).
    * This asks the recursive resolver to include DNSSEC data and allows us to
-   * use the response AD bit as the resolver's DNSSEC validation result.
+   * use the response AD bit as the resolver-reported DNSSEC status.
    *
    * This checker does not validate RRSIG/DNSKEY itself.
    */
