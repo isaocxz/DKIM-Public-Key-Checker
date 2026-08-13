@@ -229,6 +229,7 @@ const $ = id => document.getElementById(id);
 
 const TXT_RECORD_SOURCE = "TXT Record mode";
 const KNOWN_DKIM_TAGS = new Set(["v","h","k","n","p","s","t"]);
+const DKIM_TAG_NAME_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 function showError(prefix, error) {
   const message = error?.message || String(error);
@@ -315,9 +316,16 @@ function parseTags(record) {
     // so that, for example, P= is an unknown tag rather than the required p=.
     const key = part.slice(0,i).trim();
     const val = part.slice(i+1).trim();
+
+    // RFC 6376 Section 3.2:
+    // tag-name = ALPHA *ALNUMPUNC; ALNUMPUNC = ALPHA / DIGIT / "_"
+    if (!DKIM_TAG_NAME_RE.test(key)) {
+      fields.push({name:key, value:val, raw:part.trim(), malformed:true});
+      continue;
+    }
+
     fields.push({name:key, value:val, raw:part.trim(), malformed:false});
 
-    if (!key) continue;
     if (Object.prototype.hasOwnProperty.call(tags,key)) duplicates.push(key);
     else tags[key] = val;
   }
