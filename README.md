@@ -17,23 +17,17 @@ DNS Lookup mode                         TXT Record mode
  DKIM key record
        │
        ▼
-    Base64
+  k= key type
        │
-       ▼
-      SPKI
-       │
-       ▼
- RSA public key
-   ├─ modulus
-   ├─ exponent
-   └─ key length
+       ├─ rsa (or omitted) → RSA validation
+       └─ ed25519          → Ed25519 validation
 ```
 
 | Area | Checks / information |
 | --- | --- |
 | DNS | TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
 | DKIM | RFC 6376 tags, duplicates, defaults, unknown tags, revoked `p=` |
-| Public key | Base64, SPKI, RSA structure, modulus, exponent |
+| Public key | Base64, RSA SPKI/structure/modulus/exponent, Ed25519 32-byte encoding |
 | Security | RSA key length based on RFC 8301 |
 | Operation | DNS Lookup mode or offline TXT Record mode |
 
@@ -46,6 +40,7 @@ DNS Lookup mode                         TXT Record mode
 | DKIM record lookup | ✓ | ✓ |
 | Basic syntax validation | ✓ | ✓ |
 | RSA key length | Often | ✓ |
+| Ed25519 key format and length | Varies | ✓ |
 | Detailed RFC 6376 tag validation | Varies | ✓ |
 | Base64 / SPKI / RSA checks shown separately | Usually hidden | ✓ |
 | Modulus / exponent inspection | Varies | ✓ |
@@ -137,21 +132,49 @@ RFC 6376 tags checked by the tool:
 
 Additional checks include tag-list syntax, duplicate tags, `v=` position, missing `p=`, revoked key (`p=` empty), and unknown extension tags.
 
-## RSA Validation
+### Key-Type Dispatch
+
+After validating the DKIM tags and checking that `p=` contains a public key,
+the checker selects the public-key validation path from `k=`.
 
 ```text
-p=
- │
- ├─ Base64 decode
- ▼
-DER SubjectPublicKeyInfo
- │
- ├─ SPKI validation
- ▼
-RSA public key
- ├─ modulus
- ├─ exponent
- └─ key length
+                 DKIM key record
+                        │
+                  validate tags
+                        │
+                   inspect k=
+                        │
+          ┌─────────────┴─────────────┐
+          │                           │
+  k=rsa or omitted              k=ed25519
+          │                           │
+          ▼                           ▼
+   RSA validation              Ed25519 validation
+```
+
+Omitting `k=` selects `rsa`, as specified by RFC 6376. An empty or unsupported
+key type fails validation.
+
+## RSA Validation
+
+For `k=rsa`, or when `k=` is omitted, `p=` contains a Base64-encoded DER
+SubjectPublicKeyInfo structure.
+
+```text
+k=rsa or k= omitted
+          │
+          ▼
+     Base64-decode p=
+          │
+          ▼
+ DER SubjectPublicKeyInfo
+          │
+          ▼
+     import RSA key
+          │
+          ├─ modulus
+          ├─ exponent
+          └─ key length
 ```
 
 | RSA key length | Result |
@@ -162,29 +185,30 @@ RSA public key
 
 This policy follows RFC 8301: RSA keys below 1024 bits are prohibited, and 2048 bits or greater are recommended.
 
-## Ed25519
+## Ed25519 Validation
 
-Ed25519 DKIM keys are defined by RFC 8463 but are **not yet implemented**.
+RFC 8463 stores an Ed25519 public key directly in `p=` as Base64-encoded raw
+key bytes rather than as SubjectPublicKeyInfo (SPKI).
 
 ```text
-                DKIM p=
-                   │
-           Base64 decode
-                   │
-         ┌─────────┴─────────┐
-         │                   │
-       k=rsa             k=ed25519
-         │                   │
-        SPKI              32 bytes?
-         │                   │
-        RSA               PASS/FAIL
-     ┌───┴───┐
-  modulus   exponent
+k=ed25519
      │
- key length
+     ▼
+Base64-decode p=
+     │
+     ▼
+raw public-key bytes
+     │
+     ▼
+exactly 32 bytes?
+     │
+     ├─ yes → PASS
+     └─ no  → FAIL
 ```
 
-**TODO:** Validate `k=ed25519` by Base64 decoding `p=` and checking the required 32-byte (256-bit) public key.
+The checker strictly decodes Base64 and requires exactly 32 bytes (256 bits).
+This validates the DKIM key's encoding and length. It does not decode the
+bytes as an RFC 8032 curve point or verify a DKIM message signature.
 
 ## DNS and DNSSEC
 
@@ -234,6 +258,7 @@ HTML / CSS / JavaScript
         │
         ├─ Fetch API        → DoH transport
         ├─ Web Crypto API   → SPKI / RSA
+        ├─ Base64 decoder   → Ed25519 raw-key length
         └─ Uint8Array /
            DataView         → DNS wire format
 ```
@@ -249,6 +274,7 @@ DNS message encoding and response parsing are implemented directly in JavaScript
 | DKIM DNS public-key record validation | DKIM message-signature verification |
 | DNS TXT structure inspection | Body-hash verification |
 | RSA public-key inspection | DKIM canonicalization |
+| Ed25519 encoding and length validation | Ed25519 curve-point validation |
 | Resolver DNSSEC status | SPF validation |
 | SOA information | DMARC validation/alignment |
 

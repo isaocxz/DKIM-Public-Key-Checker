@@ -190,7 +190,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
       <div class="detail-kicker">3. Public Key</div>
       <h3>Public Key</h3>
       <div class="grid">
-        <div class="label">Format</div><div class="value">SubjectPublicKeyInfo (SPKI)</div>
+        <div class="label">Format</div><div id="keyFormat" class="value"></div>
         <div class="label">Public Key</div><div id="valid" class="value"></div>
         <div class="label">Algorithm</div><div id="algorithm" class="value"></div>
         <div class="label">Key Length</div><div id="bits" class="value"></div>
@@ -481,6 +481,7 @@ const VALIDATION_DESCRIPTIONS = {
   "Base64":"Checks whether p= is valid Base64.",
   "SPKI":"Checks the SubjectPublicKeyInfo (SPKI) structure.",
   "RSA public key":"Checks whether SPKI contains an RSA public key.",
+  "Ed25519 public key":"Checks that p= decodes to a 32-byte Ed25519 public key.",
   "RSA key length":"Checks RSA key length against RFC 8301 policy.",
   "Public exponent":"Reports the RSA public exponent.",
   "Public Key":"Public-key checks were not performed."
@@ -687,7 +688,7 @@ function addRfc6376Checks(checks, info) {
   } else if (info.tags.k === "rsa") {
     checks.push(validation("pass","Key type","k=rsa"));
   } else if (info.tags.k === "ed25519") {
-    checks.push(validation("pass","Key type","k=ed25519 (public-key validation not yet implemented)"));
+    checks.push(validation("pass","Key type","k=ed25519"));
   } else {
     checks.push(validation("fail","Key type",`k=${info.tags.k}; unsupported key type`));
   }
@@ -786,8 +787,27 @@ async function inspectRsaPublicKey(pValue) {
   }
 }
 
+/* RFC 8463 stores the raw 32-byte Ed25519 public key directly in p=. */
+function inspectEd25519PublicKey(pValue) {
+  const decoded = decodeBase64Strict(pValue);
+  if (!decoded.ok) {
+    return {base64Ok:false, ed25519Ok:false, byteLength:null, error:decoded.error};
+  }
+
+  const byteLength = decoded.bytes.length;
+  return {
+    base64Ok:true,
+    ed25519Ok:byteLength === 32,
+    byteLength,
+    error:byteLength === 32
+      ? ""
+      : `The Ed25519 public key is ${byteLength} bytes; RFC 8463 requires 32 bytes.`
+  };
+}
+
 function setUnavailablePublicKeyDetails(status) {
   $("valid").textContent = status;
+  $("keyFormat").textContent = "—";
   $("algorithm").textContent = "—";
   $("bits").textContent = "—";
   $("exponent").textContent = "—";
@@ -808,23 +828,29 @@ async function analyze(record, meta={}) {
     let keyInspection = {
       base64Ok:false,
       spkiOk:false,
+      ed25519Ok:false,
       error:"",
       exponent:null,
       bitLength:null,
-      modulusBytes:null
+      modulusBytes:null,
+      byteLength:null
     };
 
     if (pState === "present" && keyType === "rsa") {
       keyInspection = await inspectRsaPublicKey(pValue);
+    } else if (pState === "present" && keyType === "ed25519") {
+      keyInspection = inspectEd25519PublicKey(pValue);
     }
 
     const {
       base64Ok,
       spkiOk,
+      ed25519Ok,
       error:keyParseError,
       exponent:e,
       bitLength:bitlen,
-      modulusBytes
+      modulusBytes,
+      byteLength:keyByteLength
     } = keyInspection;
 
     /*
@@ -866,7 +892,17 @@ async function analyze(record, meta={}) {
     } else {
       checks.push(validation("pass","p= public key","Present","key"));
 
-      if (keyType !== "rsa") {
+      if (keyType === "ed25519") {
+        if (!base64Ok) {
+          checks.push(validation("fail","Base64",keyParseError,"key"));
+          checks.push(validation("info","Ed25519 public key","Not evaluated because Base64 decoding failed","key"));
+        } else {
+          checks.push(validation("pass","Base64","p= decoded successfully","key"));
+          checks.push(ed25519Ok
+            ? validation("pass","Ed25519 public key","32 bytes (256 bit)","key")
+            : validation("fail","Ed25519 public key",keyParseError,"key"));
+        }
+      } else if (keyType !== "rsa") {
         checks.push(validation("info","Base64",`Not evaluated because k=${keyType} validation is not implemented`,"key"));
         checks.push(validation("info","SPKI",`Not applicable to k=${keyType}`,"key"));
         checks.push(validation("info","RSA public key",`Not applicable to k=${keyType}`,"key"));
@@ -953,11 +989,17 @@ async function analyze(record, meta={}) {
       .filter(([name]) => !KNOWN_DKIM_TAGS.has(name))
       .map(([name,value]) => `${name}=${value}`);
     $("unknownTags").textContent = unknown.length ? unknown.join("; ") : "(none)";
-    if (pState === "present" && keyType !== "rsa") {
+    if (pState === "present" && keyType === "ed25519") {
+      setUnavailablePublicKeyDetails(ed25519Ok ? "Valid encoding and length" : "Invalid");
+      $("keyFormat").textContent = "Raw Ed25519 public key";
+      $("algorithm").textContent = "Ed25519";
+      if (base64Ok) $("bits").textContent = `${keyByteLength * 8} bit${ed25519Ok ? " ✓" : " ✗ expected 256 bit"}`;
+    } else if (pState === "present" && keyType !== "rsa") {
       setUnavailablePublicKeyDetails("Not evaluated");
       $("algorithm").textContent = keyType || "—";
     } else if (pState === "present" && spkiOk) {
       $("valid").textContent = "Valid";
+      $("keyFormat").textContent = "SubjectPublicKeyInfo (SPKI)";
       $("algorithm").textContent = "RSA";
       $("bits").textContent =
         bitlen < 1024
