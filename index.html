@@ -650,11 +650,19 @@ function addRfc6376Checks(checks, info) {
     checks.push(validation("info","Hash algorithms","h= omitted; all algorithms are allowed by the record"));
   }
 
-  // k= is OPTIONAL and defaults to rsa. Unknown key types are ignored by DKIM verifiers.
-  const keyType = info.tags.k || "rsa";
-  checks.push(keyType === "rsa"
-    ? validation("pass","Key type",info.tags.k ? "k=rsa" : "k= omitted; default is rsa")
-    : validation("fail","Key type",`k=${keyType}; unsupported by this RSA key checker`));
+  // k= is OPTIONAL and defaults to rsa only when omitted. An explicitly
+  // empty value does not match key-k-tag-type and is therefore invalid.
+  if (info.tags.k === undefined) {
+    checks.push(validation("pass","Key type","k= omitted; default is rsa"));
+  } else if (info.tags.k === "") {
+    checks.push(validation("fail","Key type","k= is present but empty"));
+  } else if (info.tags.k === "rsa") {
+    checks.push(validation("pass","Key type","k=rsa"));
+  } else if (info.tags.k === "ed25519") {
+    checks.push(validation("pass","Key type","k=ed25519 (public-key validation not yet implemented)"));
+  } else {
+    checks.push(validation("fail","Key type",`k=${info.tags.k}; unsupported key type`));
+  }
 
   // n= is OPTIONAL, for human-readable notes only, and has no program semantics.
   checks.push(info.tags.n !== undefined
@@ -762,6 +770,7 @@ async function analyze(record, meta={}) {
 
     const extracted = extractP(record);
     const {state:pState, p:pValue, info} = extracted;
+    const keyType = info.tags.k === undefined ? "rsa" : info.tags.k;
 
     let keyInspection = {
       base64Ok:false,
@@ -772,7 +781,7 @@ async function analyze(record, meta={}) {
       modulusBytes:null
     };
 
-    if (pState === "present") {
+    if (pState === "present" && keyType === "rsa") {
       keyInspection = await inspectRsaPublicKey(pValue);
     }
 
@@ -824,7 +833,11 @@ async function analyze(record, meta={}) {
     } else {
       checks.push(validation("pass","p= public key","Present","key"));
 
-      if (!base64Ok) {
+      if (keyType !== "rsa") {
+        checks.push(validation("info","Base64",`Not evaluated because k=${keyType} validation is not implemented`,"key"));
+        checks.push(validation("info","SPKI",`Not applicable to k=${keyType}`,"key"));
+        checks.push(validation("info","RSA public key",`Not applicable to k=${keyType}`,"key"));
+      } else if (!base64Ok) {
         checks.push(validation(
           "fail","Base64",
           keyParseError || "The p= value is not valid Base64.",
@@ -907,7 +920,10 @@ async function analyze(record, meta={}) {
       .filter(([name]) => !KNOWN_DKIM_TAGS.has(name))
       .map(([name,value]) => `${name}=${value}`);
     $("unknownTags").textContent = unknown.length ? unknown.join("; ") : "(none)";
-    if (pState === "present" && spkiOk) {
+    if (pState === "present" && keyType !== "rsa") {
+      setUnavailablePublicKeyDetails("Not evaluated");
+      $("algorithm").textContent = keyType || "—";
+    } else if (pState === "present" && spkiOk) {
       $("valid").textContent = "Valid";
       $("algorithm").textContent = "RSA";
       $("bits").textContent =
