@@ -411,6 +411,34 @@ function parseColonTokenList(value, {allowAsterisk=false}={}) {
   return {values, empty, invalid};
 }
 
+/*
+ * RFC 6376 Section 3.6.1 defines n= as RFC 2045 qp-section. A quoted
+ * octet is "=" followed by exactly two uppercase hexadecimal digits.
+ */
+function validateQpSection(value) {
+  for (let i=0; i<value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (value[i] === "=") {
+      const escape = value.slice(i+1,i+3);
+      if (!/^[0-9A-F]{2}$/.test(escape)) {
+        return {ok:false, error:"n= contains an invalid quoted-printable escape"};
+      }
+      // The loop already consumed '=', so skip the two hexadecimal digits.
+      i += 2;
+      continue;
+    }
+
+    // RFC 2045 safe-char is printable ASCII except '='; qp-section also
+    // permits literal SPACE and HTAB between printable characters.
+    const isSafeChar = (code >= 33 && code <= 60) || (code >= 62 && code <= 126);
+    const isWhitespace = code === 32 || code === 9;
+    if (!isSafeChar && !isWhitespace) {
+      return {ok:false, error:"n= contains a character not permitted by qp-section"};
+    }
+  }
+  return {ok:true, error:""};
+}
+
 function addNotEvaluatedKeyChecks(checks, reason) {
   checks.push(validation("info","Base64",`Not evaluated because ${reason}`,"key"));
   checks.push(validation("info","SPKI",`Not evaluated because ${reason}`,"key"));
@@ -664,10 +692,15 @@ function addRfc6376Checks(checks, info) {
     checks.push(validation("fail","Key type",`k=${info.tags.k}; unsupported key type`));
   }
 
-  // n= is OPTIONAL, for human-readable notes only, and has no program semantics.
-  checks.push(info.tags.n !== undefined
-    ? validation("info","Notes","n= present; informational only")
-    : validation("info","Notes","n= omitted; default is empty"));
+  // n= is OPTIONAL and uses RFC 2045 qp-section encoding.
+  if (info.tags.n !== undefined) {
+    const qpSection = validateQpSection(info.tags.n);
+    checks.push(qpSection.ok
+      ? validation("info","Notes","n= present; valid qp-section; informational only")
+      : validation("fail","Notes",qpSection.error));
+  } else {
+    checks.push(validation("info","Notes","n= omitted; default is empty"));
+  }
 
   // p= is REQUIRED. Empty p= is handled separately as a revoked key.
   checks.push(info.tags.p !== undefined
