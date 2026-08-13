@@ -1,21 +1,26 @@
-; DKIM Public Key Checker - Unit Test Zone
-; BIND-style zone file suitable for Route 53 "Import zone file".
+; DKIM Public Key Checker - DNS Test Zone
+; Standard BIND-style zone file.
+; Parenthesized multiline TXT records preserve character-string boundaries.
+; Route 53 DNS supports these records, but its zone-file importer does not
+; accept every standard BIND TXT representation; use its API when needed.
 ;
-; IMPORTANT:
-;   Replace example.com. with the hosted zone name before import,
-;   or import into an example.com test zone.
-;   SOA and NS records are intentionally omitted.
+; Human-readable test specifications and expected results are documented in
+; TEST-CASES.md. Test IDs in this file correspond to headings in that file.
+; SOA and NS records are intentionally omitted.
 ;
 $ORIGIN example.com.
 $TTL 3600
 
+; TC-DNS-001: One TXT RR containing one character-string.
 single-string._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8tyXBnkIg6gDiTaLopCQo9G+tbQ1TzrPqmYrdqNqRn0ubR18ChjJx3Os5YgXngb5Ltp+Lm+jELTPk669ejPXkbFwwCVQV5nrzLuIiTSl0Rsn90xcNm88lKPEZz05MhYlXBlkEP7S1p0v4eGOmhzRvXyAmb2+Mgtr7F2N7fc+R4wIDAQAB"
 
+; TC-DNS-002: One TXT RR containing two character-strings.
 multi-string._domainkey 3600 IN TXT (
   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnjixPCb3MwVP/oC91Oz1ogcPtW7qdtI5tGTE3qyer8aSs0bR6RcLL99kntHw5yxxRzT5Nco3LKvQ2wxXgYkk4529++eW0i8ziivBOKA5dKp9hxj99ery/UGad5MLTHx5F60wuG5K6mQRAOBrADJ0DFE8FNW2VU0tpLlaREi4Iwp/UQ3e"
   "bli+AjaF9/Stsaz6d/jH9sgBPQbofu3AtiFim0rQA88Ui8QYlz8TGorvckvSYZoSYCPS6YeQT6sFqdPAIjyIyr5DNfDTiNa+QZnxgL0r159jRsa5sf3G3m7bJu+0SpQf6+S1W+UIEAqtwLjqr/A88NTBnGnnDbUXaQSYwQIDAQAB"
 )
 
+; TC-DNS-003: Two TXT RRs at one selector name.
 multi-rr._domainkey 3600 IN TXT (
   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAucmPyEUFjpXsBrbHOr1iR3AzPc1cEzzE8hIva4SWKIa4W3y0e3CpeX2gRP0iMaWjXLM9CMB0Vnubv+w1+Rss3YfNYtxjnN6SsoXTKFL0uRndeMqERfctwt1RjHOdQKxskdV6nXAAK1lsZS+naIzhD7BQQwEBpa2gHxVz/aJBb74NJCoX"
   "HmdBvbNsWznDwwGUfM+igvyMih8MsSMdHU8jwtv/NzlWamya7MMqM/H8O7TKjmmjYjym0F4xeNyDVYjwAVnqjc9YKq1XMC+9miOEAguHJq8T9Kuk2MgPoedzu/q3pNZwGLRKVxyQDtz3d8rNFJvjP8DQfvf7Z39uy3Xn/QIDAQAB"
@@ -25,49 +30,169 @@ multi-rr._domainkey 3600 IN TXT (
   "CIRAtbyX6OpczvaB2SwWu+NvOpS7H6j/d7w1Om1uwwGw6/4jdFf9Vfbqno33QNd6SFq7E/pz5qFTuBo7TTM/RSQNwafgbkxnCc2D69+zZBphUzB2i26hyouqL0bw0mfx3TSDMveP15GZd/MT29fqK7mFiOBnNXQIWRHwZwIDAQAB"
 )
 
+; TC-P-002: Empty p= means a revoked key.
 revoked._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p="
 
+; TC-RSA-001: RSA 512-bit key, below the RFC 8301 minimum.
 rsa512._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALQEMgamyGXdY1iP7aOf2JpnaClngwp5cgKsFFffrLU3NetE6VagGkZZimMvVHyU6V9I8of8eDTnRSQMao3DlcECAwEAAQ=="
 
+; TC-RSA-003: RSA 2048-bit key, meeting the RFC 8301 recommendation.
 rsa2048._domainkey 3600 IN TXT (
-    "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
-    "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
-    "RMpwIDAQAB"
+  "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
 )
 
+; TC-RSA-002: RSA 1024-bit key, permitted but not recommended.
 rsa1024._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc0p6wpQgE8VIGM+Li7k0Rcfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB"
 
+; TC-P-001: Required p= tag is absent.
 missing-p._domainkey 3600 IN TXT "v=DKIM1; k=rsa"
 
+; TC-P-003: p= is not Base64.
 invalid-base64._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=!!!INVALID!!!"
 
+; TC-P-004: p= is Base64 but is not an SPKI public key.
 invalid-key._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p=VGhpcyBpcyB2YWxpZCBCYXNlNjQgZGF0YSwgYnV0IGl0IGlzIG5vdCBhbiBTUEtJIHB1YmxpYyBrZXku"
 
+; TC-TAG-003: Duplicate p= tags invalidate the tag-list.
 duplicate-p._domainkey 3600 IN TXT (
-    "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc0p6wpQgE8VIGM+Li7k0R"
-    "cfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc"
-    "0p6wpQgE8VIGM+Li7k0Rcfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB"
+  "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc0p6wpQgE8VIGM+Li7k0R"
+  "cfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+0X2Z9zH8oyn0b+SAXLEez4wjFGrCBlC3I3TELLaAZfHlatny4tOB0R+Aw7YMx36XWft6pD1ixSiEa6hqMzzaO+w5f7JJam7PVv/h3F0ksSus8vMTipx++XNaLc"
+  "0p6wpQgE8VIGM+Li7k0Rcfcf2BU/4GUP/EsR0iYVNXG2WKCQIDAQAB"
 )
 
+; TC-V-001: Unsupported key-record version.
 invalid-version._domainkey 3600 IN TXT (
-    "v=DKIM2; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
-    "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
-    "RMpwIDAQAB"
+  "v=DKIM2; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
 )
 
+; TC-V-002: v= is present but is not the first tag.
 version-not-first._domainkey 3600 IN TXT (
-    "k=rsa; v=DKIM1; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
-    "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
-    "RMpwIDAQAB"
+  "k=rsa; v=DKIM1; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
 )
 
+; TC-TAG-001: Valid minimal record using all applicable defaults.
 default-tags._domainkey 3600 IN TXT (
-    "p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+YAvCR1SCFOZTGDnLd"
-    "zBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/RMpwIDAQAB"
+  "p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+YAvCR1SCFOZTGDnLd"
+  "zBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/RMpwIDAQAB"
 )
 
+; TC-TAG-002: Syntactically valid unknown extension tag.
 unknown-tag._domainkey 3600 IN TXT (
-    "v=DKIM1; k=rsa; x-unit-test=example; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHB"
-    "bchqmusRoVEQUnIiDXq+YAvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINN"
-    "SuKW4E1cCeSVA8zbPTtQ/RMpwIDAQAB"
+  "v=DKIM1; k=rsa; x_unit_test=example; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHB"
+  "bchqmusRoVEQUnIiDXq+YAvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINN"
+  "SuKW4E1cCeSVA8zbPTtQ/RMpwIDAQAB"
+)
+
+; ---------------------------------------------------------------------------
+; Case sensitivity and RFC 6376 ABNF cases
+; ---------------------------------------------------------------------------
+
+; TC-CASE-001: Uppercase P= must not satisfy the required lowercase p= tag.
+uppercase-p._domainkey 3600 IN TXT "v=DKIM1; k=rsa; P=QUJD"
+
+; TC-CASE-002: Uppercase V= is an unknown tag; lowercase v= remains omitted.
+uppercase-v._domainkey 3600 IN TXT (
+  "V=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-TAG-004: tag-name must begin with ALPHA.
+invalid-tag-start._domainkey 3600 IN TXT (
+  "v=DKIM1; 1test=value; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-TAG-005: Hyphen is not permitted in a tag-name.
+invalid-tag-hyphen._domainkey 3600 IN TXT (
+  "v=DKIM1; x-test=value; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-TAG-006: Every tag-spec must contain '='.
+missing-tag-equals._domainkey 3600 IN TXT (
+  "v=DKIM1; malformed; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-TAG-007: tag-name cannot be empty.
+empty-tag-name._domainkey 3600 IN TXT (
+  "v=DKIM1; =value; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-H-001: Empty list element is invalid in h=.
+invalid-h-empty-item._domainkey 3600 IN TXT (
+  "v=DKIM1; h=sha256::sha1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-H-002: Whitespace is not valid inside an algorithm token.
+invalid-h-token._domainkey 3600 IN TXT (
+  "v=DKIM1; h=sha 256; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-H-003: h= requires at least one algorithm.
+empty-h._domainkey 3600 IN TXT (
+  "v=DKIM1; h=; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-K-001: k= requires a key type and is not equivalent to omission.
+empty-k._domainkey 3600 IN TXT (
+  "v=DKIM1; k=; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-K-002: Ed25519 is an active DKIM key type; key validation is deferred.
+ed25519._domainkey 3600 IN TXT "v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo="
+
+; TC-S-001: Empty list element is invalid in s=.
+invalid-s-empty-item._domainkey 3600 IN TXT (
+  "v=DKIM1; s=email::future; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-S-002: s= requires at least one service type.
+empty-s._domainkey 3600 IN TXT (
+  "v=DKIM1; s=; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-T-001: Whitespace is not valid inside a selector-flag token.
+invalid-t-token._domainkey 3600 IN TXT (
+  "v=DKIM1; t=testing flag; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-T-002: t= requires at least one selector flag.
+empty-t._domainkey 3600 IN TXT (
+  "v=DKIM1; t=; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-N-001: '=' in qp-section must be followed by two hexadecimal digits.
+invalid-n-encoding._domainkey 3600 IN TXT (
+  "v=DKIM1; n=invalid=ZZnote; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
 )
