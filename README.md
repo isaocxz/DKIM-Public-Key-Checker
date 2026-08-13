@@ -1,185 +1,171 @@
 # DKIM Public Key Checker
 
-A browser-based tool for validating the DNS public key record used by a
-DKIM verifier.
+A browser-based tool for inspecting and validating DKIM DNS public-key records.
 
-It does **not** verify a DKIM signature itself. It checks whether the
-DNS public key record required for DKIM verification is correctly formed
-and usable.
+Unlike many DKIM lookup tools that mainly answer **“Is this record valid?”**, this checker also shows **why** by exposing the DNS, DKIM, and public-key validation stages.
 
-## Features
+## Overview
 
--   Two input modes:
-    -   **DNS Lookup mode** --- retrieves the DKIM TXT record
-        through a selectable public DNS-over-HTTPS resolver.
-    -   **TXT Record mode** --- validates pasted TXT record data without
-        making a DNS query.
--   Parses DNS TXT records including multiple `character-string` values.
--   Detects multiple TXT resource records for the same selector.
--   Validates DKIM key-record syntax and tags defined by RFC 6376.
--   Reports unknown extension tags as informational and ignores them as
-    required by RFC 6376.
--   Recognizes an empty `p=` value as a revoked DKIM key.
--   Separates Base64, SPKI, RSA public-key, key-length, and exponent
-    checks.
--   Applies RSA key-length policy based on RFC 8301.
--   Shows DNSSEC validation status reported by the selected recursive
-    resolver.
--   Displays relevant SOA information for the closest enclosing DNS
-    zone.
--   Runs entirely in the browser; no application backend is required.
+```text
+DNS Lookup mode                         TXT Record mode
+       │                                      │
+       │ RFC 8484 DoH                         │ pasted TXT
+       ▼                                      │
+  DNS TXT RR ─────────────────────────────────┘
+       │
+       ▼
+ DKIM key record
+       │
+       ▼
+    Base64
+       │
+       ▼
+      SPKI
+       │
+       ▼
+ RSA public key
+   ├─ modulus
+   ├─ exponent
+   └─ key length
+```
+
+| Area | Checks / information |
+| --- | --- |
+| DNS | TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
+| DKIM | RFC 6376 tags, duplicates, defaults, unknown tags, revoked `p=` |
+| Public key | Base64, SPKI, RSA structure, modulus, exponent |
+| Security | RSA key length based on RFC 8301 |
+| Operation | DNS Lookup mode or offline TXT Record mode |
+
+## Why This Checker?
+
+**Runs entirely client-side in the browser.** No application backend or external JavaScript libraries or frameworks are required.
+
+| Capability | Typical online DKIM checker | This checker |
+| --- | :---: | :---: |
+| DKIM record lookup | ✓ | ✓ |
+| Basic syntax validation | ✓ | ✓ |
+| RSA key length | Often | ✓ |
+| Detailed RFC 6376 tag validation | Varies | ✓ |
+| Base64 / SPKI / RSA checks shown separately | Usually hidden | ✓ |
+| Modulus / exponent inspection | Varies | ✓ |
+| Multiple TXT RR detection | Varies | ✓ |
+| TXT `character-string` structure | Usually hidden | ✓ |
+| DNSSEC resolver status | Usually not shown | ✓ |
+| SOA information | Usually not shown | ✓ |
+| Raw TXT Record mode | Varies | ✓ |
+| DNS resolver selection | Varies | ✓ |
+| DNS wire-format parsing | Usually hidden | ✓ |
+| Fully client-side | Varies | ✓ |
+| External JavaScript dependencies | Varies | None |
+| Offline validation in TXT Record mode | Varies | ✓ |
+
+**This checker is intended as a diagnostic and testing tool, not just a DKIM lookup service.**
 
 ## Usage
 
-Open `index.html` in a modern browser, or publish it as a static site
-such as GitHub Pages.
-
 ### DNS Lookup mode
 
-Enter the complete DKIM DNS name:
+Enter a complete DKIM DNS name:
 
-``` text
+```text
 selector._domainkey.example.com
 ```
 
-Choose a DNS resolver and select **Lookup & Validate**.
+Select a resolver and run **Lookup & Validate**.
 
-The checker currently supports:
+```text
+Browser
+   │ HTTPS / RFC 8484 DoH
+   ▼
+Recursive resolver
+   │ DNS
+   ▼
+Authoritative DNS
+```
 
--   Google Public DNS
--   Cloudflare 1.1.1.1
--   Quad9
-
-DNS queries are sent using RFC 8484 DNS over HTTPS in DNS wire format.
-
-If direct DoH access is unavailable, use TXT Record mode with output
-from your local DNS tools.
+If direct DoH access is unavailable, use TXT Record mode with output from a local DNS tool.
 
 ### TXT Record mode
 
-Paste a DKIM TXT record directly.
+Paste the DKIM TXT record directly:
 
-A normal record can be pasted as:
-
-``` text
+```text
 v=DKIM1; k=rsa; p=MIIBIjANBgkqh...
 ```
 
-Output copied from tools such as `nslookup` can also contain quoted DNS
-`character-string` values, for example:
+Quoted DNS `character-string` values are also accepted:
 
-``` text
+```text
 "v=DKIM1; k=rsa; "
 "p=MIIBIjANBgkqh..."
 ```
 
-The strings are joined before the DKIM key record is analyzed.
+They are joined before DKIM validation.
 
-TXT Record mode does not perform DNS queries, so DNS-level properties
-such as TXT RR count and DNSSEC validation are unavailable.
+TXT Record mode does not perform DNS queries, so DNS-level information such as TXT RR count and DNSSEC status is unavailable.
 
-## Validation Flow
+## Validation Results
 
-The checker follows the processing order used to obtain and interpret a
-DKIM public key:
+| Status | Meaning |
+| --- | --- |
+| `PASS` | Check succeeded |
+| `WARN` | Usable, but with a security or interoperability concern |
+| `FAIL` | Required validation condition failed |
+| `INFO` | Informational; does not affect the overall result |
 
-``` text
-DNS / TXT Record
-      ↓
-DKIM Key Record
-      ↓
-Base64
-      ↓
-SPKI
-      ↓
-RSA Public Key
+Overall result:
+
+```text
+No FAIL / No WARN  → PASS
+No FAIL / WARN     → PASS (Warnings)
+Any FAIL           → FAIL
 ```
 
-Validation results use four states:
+## DKIM Key Record
 
-  ---------------------------------------------------------------------
-  Status                             Meaning
-  ---------------------------------- ----------------------------------
-  `PASS`                             The check succeeded.
+RFC 6376 tags checked by the tool:
 
-  `WARN`                             The record remains usable, but
-                                     there is a security or
-                                     interoperability concern.
+| Tag | Meaning | Default |
+| --- | --- | --- |
+| `v=` | Version | — |
+| `h=` | Hash algorithms | all supported |
+| `k=` | Key type | `rsa` |
+| `n=` | Notes | empty |
+| `p=` | Public key | required |
+| `s=` | Service type | `*` |
+| `t=` | Flags | empty |
 
-  `FAIL`                             The record does not satisfy the
-                                     required validation condition.
+Additional checks include tag-list syntax, duplicate tags, `v=` position, missing `p=`, revoked key (`p=` empty), and unknown extension tags.
 
-  `INFO`                             Informational result that does not
-                                     affect the overall result.
-  ---------------------------------------------------------------------
+## RSA Validation
 
-The overall result is:
+```text
+p=
+ │
+ ├─ Base64 decode
+ ▼
+DER SubjectPublicKeyInfo
+ │
+ ├─ SPKI validation
+ ▼
+RSA public key
+ ├─ modulus
+ ├─ exponent
+ └─ key length
+```
 
--   **PASS** --- no warnings or failures.
--   **PASS (Warnings)** --- no failures, but one or more warnings.
--   **FAIL** --- one or more validation checks failed.
+| RSA key length | Result |
+| --- | --- |
+| `< 1024 bit` | `FAIL` |
+| `1024–2047 bit` | `WARN` |
+| `>= 2048 bit` | `PASS` |
 
-## DKIM Key Record Checks
+This policy follows RFC 8301: RSA keys below 1024 bits are prohibited, and 2048 bits or greater are recommended.
 
-The checker evaluates the RFC 6376 key-record tags:
+## Ed25519
 
-  Tag    Purpose
-  ------ ----------------------------
-  `v=`   Key-record version
-  `h=`   Acceptable hash algorithms
-  `k=`   Key type
-  `n=`   Notes
-  `p=`   Public key
-  `s=`   Service type
-  `t=`   Selector flags
-
-It also checks:
-
--   tag-list syntax
--   duplicate tags
--   `v=` position
--   missing `p=`
--   revoked key (`p=` with an empty value)
--   unknown tags
-
-Unknown tags are reported as `INFO` and ignored rather than treated as
-an error.
-
-## RSA Key Checks
-
-For an RSA key, the checker processes `p=` in stages:
-
-1.  Base64 decoding
-2.  DER SubjectPublicKeyInfo (SPKI) import
-3.  RSA public-key import
-4.  RSA modulus length
-5.  Public exponent
-
-This separation makes malformed test cases easier to diagnose. For
-example, a value may be valid Base64 but still fail SPKI parsing.
-
-### RSA key length
-
-The current policy is:
-
-  RSA key length    Result
-  ----------------- --------
-  `< 1024 bit`      `FAIL`
-  `1024–2047 bit`   `WARN`
-  `>= 2048 bit`     `PASS`
-
-This reflects RFC 8301: RSA keys below 1024 bits are prohibited, while
-2048 bits or greater are recommended.
-
-
-## Ed25519 Support
-
-DKIM supports both RSA and Ed25519 public keys. Ed25519 support is defined by RFC 8463.
-
-This checker currently validates **RSA (`k=rsa`) public keys only**.  
-Support for **Ed25519 (`k=ed25519`) is planned but not yet implemented**.
-
-The public-key validation paths differ as follows:
+Ed25519 DKIM keys are defined by RFC 8463 but are **not yet implemented**.
 
 ```text
                 DKIM p=
@@ -199,144 +185,87 @@ The public-key validation paths differ as follows:
  key length
 ```
 
-For RSA, the decoded `p=` value contains a DER-encoded SubjectPublicKeyInfo (SPKI) structure.
+**TODO:** Validate `k=ed25519` by Base64 decoding `p=` and checking the required 32-byte (256-bit) public key.
 
-For Ed25519, RFC 8463 defines `p=` as the Base64 encoding of the 32-byte (256-bit) Ed25519 public key. SPKI parsing is therefore not required.
+## DNS and DNSSEC
 
-**TODO:** Add `k=ed25519` validation by checking Base64 decoding and the required 32-byte public-key length.
+DNS Lookup mode uses **RFC 8484 DNS wire-format DoH** through the browser Fetch API.
 
-## DNSSEC
+```text
+DNS query
+ ├─ Header
+ ├─ Question
+ └─ EDNS(0), DO=1
+        │
+        ▼
+      HTTPS
+        │
+        ▼
+ Recursive resolver
+        │
+        ▼
+DNS response
+ ├─ RCODE
+ ├─ AD bit
+ └─ TXT RR
 
-DNS Lookup mode sends an EDNS(0) query with the **DO (DNSSEC OK)**
-bit set.
-
-The checker then reads the **AD (Authenticated Data)** bit returned by
-the selected recursive resolver:
-
-``` text
-AD=1  → Secure (resolver AD=true)
-AD=0  → Not authenticated (resolver AD=false)
+Auxiliary SOA lookup
+ └─ nearest enclosing zone
 ```
 
-The checker does **not** perform cryptographic DNSSEC validation of
-`RRSIG` and `DNSKEY` records itself. The DNSSEC result represents the
-validation result reported by the selected resolver.
+DNSSEC status is based on the recursive resolver's **AD (Authenticated Data)** bit:
 
-An `AD=0` response does not by itself mean that DNSSEC is broken; the
-zone may simply be unsigned.
+| Resolver response | Display |
+| --- | --- |
+| `AD=1` | Secure |
+| `AD=0` | Not authenticated |
 
-## SOA Information
+The checker does **not** cryptographically validate RRSIG/DNSKEY itself. `AD=0` does not necessarily indicate broken DNSSEC; the zone may simply be unsigned.
 
-For DNS lookups, the checker also displays auxiliary SOA information.
+### Why DoH?
 
-Starting from the DKIM DNS name, it searches toward the parent domain
-until it finds the closest enclosing zone with an SOA record. This
-allows delegated `_domainkey` zones to be handled correctly.
+Browsers cannot send arbitrary UDP/TCP DNS queries to port 53. DoH allows the browser to carry a complete DNS wire-format message over HTTPS without a backend server.
 
-Displayed information includes:
+Wire format is used because it preserves details needed by the checker, including TXT RR boundaries, `character-string` boundaries, DNS header flags, EDNS(0)/DO, RCODE, and SOA data.
 
--   zone name
--   SOA MNAME
--   serial
--   negative-cache TTL
+## Implementation
 
-The SOA query is performed through the selected recursive resolver. The
-checker does not query the SOA MNAME authoritative server directly.
-
-## DNS Limitations
-
-### Why DNS over HTTPS?
-
-This tool runs entirely in a web browser. Web browsers cannot send
-standard DNS queries directly over UDP or TCP port 53.
-
-DNS over HTTPS (DoH) allows the browser to send DNS wire-format queries
-over HTTPS, making DNS lookups possible without a backend server.
-
-The selected DoH service acts as a recursive resolver. It performs the
-actual DNS resolution and queries the authoritative DNS servers as
-necessary.
-
-``` text
-Browser
-   ↓ HTTPS / DoH
-Recursive DNS resolver
-   ↓ UDP/TCP DNS
-Authoritative DNS servers
+```text
+HTML / CSS / JavaScript
+        │
+        ├─ Fetch API        → DoH transport
+        ├─ Web Crypto API   → SPKI / RSA
+        └─ Uint8Array /
+           DataView         → DNS wire format
 ```
 
-DoH is therefore used as a **browser transport mechanism**, not because
-the authoritative DNS servers themselves support DoH.
+**No external JavaScript libraries or frameworks are used.**
 
-This is a browser-only application.
-
-Web browsers cannot send arbitrary UDP/TCP DNS queries to port 53.
-Therefore, DNS Lookup mode must use DNS over HTTPS and cannot
-directly query an authoritative DNS server.
-
-The actual path is:
-
-``` text
-Browser
-   ↓ DoH
-Selected recursive resolver
-   ↓ DNS
-Authoritative DNS server
-```
-
-In networks where direct DoH is blocked, use TXT Record mode with output
-obtained from local tools such as `nslookup`, `Resolve-DnsName`, or
-`dig`.
-
-## Privacy
-
-TXT Record mode is processed locally in the browser.
-
-DNS Lookup mode sends the requested DNS name to the selected public
-DNS resolver. No separate application backend is used.
-
-## Standards
-
-The checker is primarily based on:
-
--   RFC 6376 --- DomainKeys Identified Mail (DKIM) Signatures
--   RFC 8301 --- Cryptographic Algorithm and Key Usage Update to DKIM
--   RFC 8463 --- A New Cryptographic Signature Method for DKIM
--   RFC 8484 --- DNS Queries over HTTPS (DoH)
--   RFC 6891 --- Extension Mechanisms for DNS (EDNS(0))
+DNS message encoding and response parsing are implemented directly in JavaScript.
 
 ## Scope
 
-The tool validates the **DKIM DNS public key record**.
-
-It intentionally does not perform:
-
--   DKIM message-signature verification
--   body-hash verification
--   DKIM canonicalization
--   SPF validation
--   DMARC validation or alignment
-
-Those functions are outside the scope of this checker.
+| Included | Not included |
+| --- | --- |
+| DKIM DNS public-key record validation | DKIM message-signature verification |
+| DNS TXT structure inspection | Body-hash verification |
+| RSA public-key inspection | DKIM canonicalization |
+| Resolver DNSSEC status | SPF validation |
+| SOA information | DMARC validation/alignment |
 
 ## Requirements
 
-A current version of Chrome, Edge, Firefox, or Safari is recommended.
+| Mode | Requirements |
+| --- | --- |
+| DNS Lookup mode | Current Chrome, Edge, Firefox, or Safari; Web Crypto; Fetch; HTTPS access to the selected DoH resolver |
+| TXT Record mode | Current browser with Web Crypto; no DNS/network access required |
 
-### DNS Lookup mode
+No installation or server-side runtime is required.
 
-Requires:
+## Standards
 
--   Web Crypto API
--   `fetch()`
--   Direct HTTPS access to the selected DoH resolver
-
-### TXT Record mode
-
-Requires:
-
--   Web Crypto API
-
-No DNS or network access is required.
-
-No installation, server-side runtime, or external JavaScript library is required.
+- RFC 6376 — DomainKeys Identified Mail (DKIM) Signatures
+- RFC 8301 — Cryptographic Algorithm and Key Usage Update to DKIM
+- RFC 8463 — A New Cryptographic Signature Method for DKIM
+- RFC 8484 — DNS Queries over HTTPS (DoH)
+- RFC 6891 — Extension Mechanisms for DNS (EDNS(0))
