@@ -311,7 +311,9 @@ function parseTags(record) {
       continue;
     }
 
-    const key = part.slice(0,i).trim().toLowerCase();
+    // RFC 6376 tag names are case-sensitive. Preserve the original spelling
+    // so that, for example, P= is an unknown tag rather than the required p=.
+    const key = part.slice(0,i).trim();
     const val = part.slice(i+1).trim();
     fields.push({name:key, value:val, raw:part.trim(), malformed:false});
 

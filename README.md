@@ -57,7 +57,6 @@ DNS Lookup mode                         TXT Record mode
 | DNS resolver selection | Varies | ✓ |
 | DNS wire-format parsing | Usually hidden | ✓ |
 | Fully client-side | Varies | ✓ |
-| External JavaScript dependencies | Varies | None |
 | Offline validation in TXT Record mode | Varies | ✓ |
 
 **This checker is intended as a diagnostic and testing tool, not just a DKIM lookup service.**
