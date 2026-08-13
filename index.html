@@ -396,6 +396,21 @@ function validation(status, check, detail, category="key") {
   return {status, check, detail, category};
 }
 
+/*
+ * RFC 6376 hyphenated-word lists permit FWS around ':' but not within a
+ * token. Preserve empty items so leading, trailing, and repeated colons are
+ * rejected instead of silently discarded.
+ */
+function parseColonTokenList(value, {allowAsterisk=false}={}) {
+  const values = value.split(":").map(item => item.trim());
+  const empty = values.some(item => item === "");
+  const tokenPattern = allowAsterisk
+    ? /^(?:[A-Za-z][A-Za-z0-9-]*|\*)$/
+    : /^[A-Za-z][A-Za-z0-9-]*$/;
+  const invalid = values.filter(item => item !== "" && !tokenPattern.test(item));
+  return {values, empty, invalid};
+}
+
 function addNotEvaluatedKeyChecks(checks, reason) {
   checks.push(validation("info","Base64",`Not evaluated because ${reason}`,"key"));
   checks.push(validation("info","SPKI",`Not evaluated because ${reason}`,"key"));
@@ -624,10 +639,13 @@ function addRfc6376Checks(checks, info) {
 
   // h= is OPTIONAL. Empty h= is invalid because the grammar requires at least one algorithm.
   if (info.tags.h !== undefined) {
-    const values = info.tags.h.split(":").map(x=>x.trim()).filter(Boolean);
-    checks.push(values.length
-      ? validation("pass","Hash algorithms",`h=${values.join(":")}`)
-      : validation("fail","Hash algorithms","h= is present but empty"));
+    const {values, empty, invalid} = parseColonTokenList(info.tags.h);
+    checks.push(empty
+      ? validation("fail","Hash algorithms",
+          info.tags.h === "" ? "h= is present but empty" : "h= contains an empty list item")
+      : invalid.length
+        ? validation("fail","Hash algorithms",`Invalid token(s): ${invalid.join(", ")}`)
+        : validation("pass","Hash algorithms",`h=${values.join(":")}`));
   } else {
     checks.push(validation("info","Hash algorithms","h= omitted; all algorithms are allowed by the record"));
   }
@@ -650,23 +668,29 @@ function addRfc6376Checks(checks, info) {
 
   // s= is OPTIONAL and defaults to *. For DKIM email use, email or * must apply.
   if (info.tags.s !== undefined) {
-    const values = info.tags.s.split(":").map(x=>x.trim()).filter(Boolean);
+    const {values, empty, invalid} = parseColonTokenList(info.tags.s, {allowAsterisk:true});
     const email = values.includes("*") || values.includes("email");
-    checks.push(!values.length
-      ? validation("fail","Service type","s= is present but empty")
-      : email
-        ? validation("pass","Service type",`s=${values.join(":")}; applies to email`)
-        : validation("fail","Service type",`s=${values.join(":")}; does not apply to email`));
+    checks.push(empty
+      ? validation("fail","Service type",
+          info.tags.s === "" ? "s= is present but empty" : "s= contains an empty list item")
+      : invalid.length
+        ? validation("fail","Service type",`Invalid token(s): ${invalid.join(", ")}`)
+        : email
+          ? validation("pass","Service type",`s=${values.join(":")}; applies to email`)
+          : validation("fail","Service type",`s=${values.join(":")}; does not apply to email`));
   } else {
     checks.push(validation("pass","Service type","s= omitted; default is *"));
   }
 
   // t= is OPTIONAL. Empty t= is invalid because the grammar requires at least one flag.
   if (info.tags.t !== undefined) {
-    const values = info.tags.t.split(":").map(x=>x.trim()).filter(Boolean);
-    checks.push(values.length
-      ? validation("info","Selector flags",`t=${values.join(":")}`)
-      : validation("fail","Selector flags","t= is present but empty"));
+    const {values, empty, invalid} = parseColonTokenList(info.tags.t);
+    checks.push(empty
+      ? validation("fail","Selector flags",
+          info.tags.t === "" ? "t= is present but empty" : "t= contains an empty list item")
+      : invalid.length
+        ? validation("fail","Selector flags",`Invalid token(s): ${invalid.join(", ")}`)
+        : validation("info","Selector flags",`t=${values.join(":")}`));
   } else {
     checks.push(validation("info","Selector flags","t= omitted; no flags set"));
   }
