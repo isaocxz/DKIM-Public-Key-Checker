@@ -68,6 +68,13 @@ selector._domainkey.example.com
 
 Select a resolver and run **Lookup & Validate**.
 
+To populate the DNS name and run validation automatically, pass it in the
+`fqdn` URL parameter:
+
+```text
+https://example.com/?fqdn=selector._domainkey.example.com
+```
+
 ```text
 Browser
    │ HTTPS / RFC 8484 DoH

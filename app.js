@@ -1267,3 +1267,13 @@ async function dnsLookup() {
 $("dnsCheck").onclick = dnsLookup;
 $("txtCheck").onclick = () => analyze($("txtInput").value, {source:TXT_RECORD_SOURCE});
 $("fqdn").addEventListener("keydown", e => { if(e.key==="Enter") dnsLookup(); });
+
+function runUrlFqdnLookup() {
+  const fqdn = new URLSearchParams(window.location.search).get("fqdn");
+  if (fqdn === null || fqdn === "") return;
+
+  $("fqdn").value = fqdn;
+  dnsLookup();
+}
+
+runUrlFqdnLookup();
