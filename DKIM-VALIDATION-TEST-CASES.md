@@ -28,6 +28,7 @@ syntax validation implemented by the checker.
 | TC-DNS-002 | `multi-string` | Concatenate character-strings in one TXT RR | `PASS` | Implemented |
 | TC-DNS-003 | `multi-rr` | Reject multiple TXT RRs for one selector | `FAIL` | Implemented |
 | TC-CNAME-001 | `selector1._domainkey.openai.com` | Display the CNAME chain and final TXT owner | Variable; chain and owner must match | Implemented |
+| TC-CNAME-002 | `selector-1` | Follow a three-hop CNAME chain to the final TXT owner | `PASS` | Implemented |
 | TC-DNSSEC-001 | `smtpapi._domainkey.cloudflare.com` | Report a DNSSEC-validated answer from the resolver AD bit | Variable; DNSSEC must be `Secure` | Implemented |
 | TC-TAG-001 | `default-tags` | Apply omitted `v=`, `k=`, and `s=` defaults | `PASS` | Implemented |
 | TC-TAG-002 | `unknown-tag` | Ignore a valid unknown extension tag | `PASS` | Implemented |
@@ -101,6 +102,25 @@ the TXT RR must be unique.
 | --- | --- |
 | TXT RRs | `FAIL — 2` |
 | Overall | `FAIL` |
+
+## Managed CNAME
+
+### TC-CNAME-002 — Three-hop CNAME chain
+
+DNS name: `selector-1._domainkey.isaocxz.com`
+
+This case changes only DNS indirection. Three CNAME records lead to one valid
+RSA 2048-bit TXT record at `selector-4._domainkey.isaocxz.com`.
+
+| Check | Expected |
+| --- | --- |
+| DNS TXT lookup | `PASS` |
+| TXT RRs | `PASS — 1` |
+| CNAME Chain | `selector-1._domainkey.isaocxz.com` → `selector-2._domainkey.isaocxz.com` → `selector-3._domainkey.isaocxz.com` → `selector-4._domainkey.isaocxz.com` |
+| Final TXT Owner | `selector-4._domainkey.isaocxz.com` |
+| CNAME resolution | `INFO — 3 CNAME hops` |
+| RSA key length | `PASS — 2048 bit` |
+| Overall | `PASS` |
 
 ## External CNAME
 

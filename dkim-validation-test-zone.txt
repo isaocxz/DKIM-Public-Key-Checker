@@ -29,6 +29,16 @@ multi-rr._domainkey 3600 IN TXT (
   "CIRAtbyX6OpczvaB2SwWu+NvOpS7H6j/d7w1Om1uwwGw6/4jdFf9Vfbqno33QNd6SFq7E/pz5qFTuBo7TTM/RSQNwafgbkxnCc2D69+zZBphUzB2i26hyouqL0bw0mfx3TSDMveP15GZd/MT29fqK7mFiOBnNXQIWRHwZwIDAQAB"
 )
 
+; TC-CNAME-002: Three CNAME hops ending at one valid RSA 2048-bit TXT RR.
+selector-1._domainkey 3600 IN CNAME selector-2._domainkey.isaocxz.com.
+selector-2._domainkey 3600 IN CNAME selector-3._domainkey.isaocxz.com.
+selector-3._domainkey 3600 IN CNAME selector-4._domainkey.isaocxz.com.
+selector-4._domainkey 3600 IN TXT (
+  "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
 ; TC-P-002: Empty p= means a revoked key.
 revoked._domainkey 3600 IN TXT "v=DKIM1; k=rsa; p="
 
