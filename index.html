@@ -236,6 +236,7 @@ const $ = id => document.getElementById(id);
 const TXT_RECORD_SOURCE = "TXT Record mode";
 const KNOWN_DKIM_TAGS = new Set(["v","h","k","n","p","s","t"]);
 const DKIM_TAG_NAME_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
+const HYPHENATED_WORD_RE = /^[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
 
 function showError(prefix, error) {
   const message = error?.message || String(error);
@@ -309,8 +310,24 @@ function parseTags(record) {
   const fields = [];
   const duplicates = [];
 
-  for (const part of logical.split(";")) {
-    if (!part.trim()) continue;
+  const parts = logical.split(";");
+  for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+    const part = parts[partIndex];
+    if (!part.trim()) {
+      // RFC 6376 permits one optional trailing semicolon, but an empty
+      // tag-spec anywhere else is not part of the tag-list grammar.
+      const isOptionalTrailingSemicolon =
+        partIndex === parts.length - 1 && logical.includes(";");
+      if (!isOptionalTrailingSemicolon) {
+        fields.push({
+          name:null,
+          value:null,
+          raw:"(empty tag-list element)",
+          malformed:true
+        });
+      }
+      continue;
+    }
     const i = part.indexOf("=");
 
     if (i < 0) {
@@ -410,10 +427,11 @@ function validation(status, check, detail, category="key") {
 function parseColonTokenList(value, {allowAsterisk=false}={}) {
   const values = value.split(":").map(item => item.trim());
   const empty = values.some(item => item === "");
-  const tokenPattern = allowAsterisk
-    ? /^(?:[A-Za-z][A-Za-z0-9-]*|\*)$/
-    : /^[A-Za-z][A-Za-z0-9-]*$/;
-  const invalid = values.filter(item => item !== "" && !tokenPattern.test(item));
+  const invalid = values.filter(item => {
+    if (item === "") return false;
+    if (allowAsterisk && item === "*") return false;
+    return !HYPHENATED_WORD_RE.test(item);
+  });
   return {values, empty, invalid};
 }
 

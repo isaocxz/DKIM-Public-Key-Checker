@@ -35,7 +35,7 @@ syntax validation implemented by the checker.
 | TC-TAG-005 | `invalid-tag-hyphen` | Reject a hyphen in a tag name | `FAIL` | Implemented |
 | TC-TAG-006 | `missing-tag-equals` | Reject a tag-spec without `=` | `FAIL` | Implemented |
 | TC-TAG-007 | `empty-tag-name` | Reject an empty tag name | `FAIL` | Implemented |
-| TC-TAG-008 | `empty-tag-list-item` | Reject a non-trailing empty tag-list element | `FAIL` | Known issue |
+| TC-TAG-008 | `empty-tag-list-item` | Reject a non-trailing empty tag-list element | `FAIL` | Implemented |
 | TC-CASE-001 | `uppercase-p` | Do not interpret `P=` as required `p=` | `FAIL` | Implemented |
 | TC-CASE-002 | `uppercase-v` | Treat `V=` as unknown, not as `v=` | `PASS` | Implemented |
 | TC-V-001 | `invalid-version` | Reject a version other than `DKIM1` | `FAIL` | Implemented |
@@ -43,7 +43,7 @@ syntax validation implemented by the checker.
 | TC-H-001 | `invalid-h-empty-item` | Reject an empty item in the `h=` list | `FAIL` | Implemented |
 | TC-H-002 | `invalid-h-token` | Reject invalid whitespace inside an `h=` token | `FAIL` | Implemented |
 | TC-H-003 | `empty-h` | Reject an empty `h=` value | `FAIL` | Implemented |
-| TC-H-004 | `invalid-h-trailing-hyphen` | Reject a `hyphenated-word` ending in a hyphen | `FAIL` | Known issue |
+| TC-H-004 | `invalid-h-trailing-hyphen` | Reject a `hyphenated-word` ending in a hyphen | `FAIL` | Implemented |
 | TC-K-001 | `empty-k` | Reject an empty `k=` value | `FAIL` | Implemented |
 | TC-K-002 | `ed25519` | Decode and validate a 32-byte Ed25519 public key | `PASS` | Implemented |
 | TC-N-001 | `invalid-n-encoding` | Reject invalid quoted-printable in `n=` | `FAIL` | Implemented |
