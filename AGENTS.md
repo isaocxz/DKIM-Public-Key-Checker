@@ -8,6 +8,8 @@ This repository contains a client-side DKIM public-key checker. The application 
 
 - Keep changes small, focused, and easy to review.
 - Use one commit per Issue. Do not combine fixes for multiple Issues in one commit unless the user explicitly approves an exception.
+- When a commit resolves an Issue, include `Fixes #<Issue number>` in the commit message body so GitHub links and closes the Issue automatically.
+- Apply an appropriate GitHub Issue label, such as `bug` or `enhancement`, so the Issue type is clear at a glance. When work is completed, verify both the label and the closed state.
 - Keep feature additions and behavior changes separate from refactoring. Do not mix them in the same change unless separating them is impractical and the user agrees.
 - Do not stage, commit, push, or create branches unless the user explicitly asks.
 - Preserve unrelated modifications and untracked files. Never discard or rewrite user changes to make the worktree clean.
@@ -50,5 +52,4 @@ This repository contains a client-side DKIM public-key checker. The application 
 
 - Keep the configured `$ORIGIN` in `dkim-validation-test-zone.txt` unchanged unless the user explicitly requests a different test domain.
 - Use the test domain only in test documentation and fixtures. Do not embed it unnecessarily in the application code.
-- `DKIM-VALIDATION-TEST-CASES.md` and `dkim-validation-expected-results.tsv` may be local, untracked working files. Do not add or commit them unless the user explicitly asks.
-- BIND zone-file syntax and the Route 53 record editor/import formats are not interchangeable. Confirm the target format before rewriting DNS fixtures.
+- Keep `dkim-validation-test-zone.txt`, `DKIM-VALIDATION-TEST-CASES.md`, and `dkim-validation-expected-results.tsv` consistent when test cases are added, removed, or changed.
