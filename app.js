@@ -1180,6 +1180,12 @@ const RESOLVERS = {
   }
 };
 
+function updateUrlFqdn(name) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("fqdn", name);
+  history.replaceState(null, "", url);
+}
+
 async function dnsLookup() {
   hideOutput();
 
@@ -1198,6 +1204,8 @@ async function dnsLookup() {
     showError("Error", new Error("The DNS resolver setting is invalid."));
     return;
   }
+
+  updateUrlFqdn(name);
 
   try {
     const {ab,id}=await dohWireQuery(resolver,name,16);

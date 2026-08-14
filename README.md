@@ -75,6 +75,9 @@ To populate the DNS name and run validation automatically, pass it in the
 https://example.com/?fqdn=selector._domainkey.example.com
 ```
 
+A manual DNS lookup also updates the current URL without reloading the page,
+so the checked name can be copied, bookmarked, or shared.
+
 ```text
 Browser
    │ HTTPS / RFC 8484 DoH
