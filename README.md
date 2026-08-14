@@ -25,7 +25,7 @@ DNS Lookup mode                         TXT Record mode
 
 | Area | Checks / information |
 | --- | --- |
-| DNS | TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
+| DNS | CNAME chain, final TXT owner, TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
 | DKIM | RFC 6376 tags, duplicates, defaults, unknown tags, revoked `p=` |
 | Public key | Base64, RSA SPKI/structure/modulus/exponent, Ed25519 32-byte encoding |
 | Security | RSA key length based on RFC 8301 |
@@ -250,6 +250,8 @@ The checker does **not** cryptographically validate RRSIG/DNSKEY itself. `AD=0` 
 Browsers cannot send arbitrary UDP/TCP DNS queries to port 53. DoH allows the browser to carry a complete DNS wire-format message over HTTPS without a backend server.
 
 Wire format is used because it preserves details needed by the checker, including TXT RR boundaries, `character-string` boundaries, DNS header flags, EDNS(0)/DO, RCODE, and SOA data.
+
+When a selector is an alias, the checker displays the CNAME chain returned by the recursive resolver and validates the TXT record at the final owner name.
 
 ## Implementation
 

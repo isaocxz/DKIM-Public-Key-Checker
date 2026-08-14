@@ -11,7 +11,7 @@ failures attributable to one rule and makes future changes easier to review.
 - DNS zone: `isaocxz.com.`
 - Default TTL: `3600`
 - DNS name format: `<case-name>._domainkey.isaocxz.com`
-- External DNSSEC cases are identified separately and are not defined in
+- External DNS cases are identified separately and are not defined in
   `dkim-validation-test-zone.txt`.
 - Expected results describe RFC behavior, not merely the current implementation.
 - Only the checks relevant to the purpose of a case are fixed below. Other
@@ -27,6 +27,7 @@ syntax validation implemented by the checker.
 | TC-DNS-001 | `single-string` | One TXT RR with one character-string | `PASS (Warnings)` | Implemented |
 | TC-DNS-002 | `multi-string` | Concatenate character-strings in one TXT RR | `PASS` | Implemented |
 | TC-DNS-003 | `multi-rr` | Reject multiple TXT RRs for one selector | `FAIL` | Implemented |
+| TC-CNAME-001 | `selector1._domainkey.openai.com` | Display the CNAME chain and final TXT owner | Variable; chain and owner must match | Implemented |
 | TC-DNSSEC-001 | `smtpapi._domainkey.cloudflare.com` | Report a DNSSEC-validated answer from the resolver AD bit | Variable; DNSSEC must be `Secure` | Implemented |
 | TC-TAG-001 | `default-tags` | Apply omitted `v=`, `k=`, and `s=` defaults | `PASS` | Implemented |
 | TC-TAG-002 | `unknown-tag` | Ignore a valid unknown extension tag | `PASS` | Implemented |
@@ -100,6 +101,27 @@ the TXT RR must be unique.
 | --- | --- |
 | TXT RRs | `FAIL — 2` |
 | Overall | `FAIL` |
+
+## External CNAME
+
+### TC-CNAME-001 — CNAME chain and final TXT owner
+
+DNS name: `selector1._domainkey.openai.com`
+
+This is an externally managed dependency and is not included in
+`dkim-validation-test-zone.txt`. Query it in DNS Lookup mode. The stable
+purpose is to show the alias followed by the final TXT owner returned by the
+recursive resolver; the key contents and overall result may change.
+
+Observed with Google Public DNS, Cloudflare, and Quad9 on 2026-08-14:
+
+| Check | Expected |
+| --- | --- |
+| DNS TXT lookup | `PASS` |
+| Requested Name | `selector1._domainkey.openai.com` |
+| CNAME Chain | `selector1._domainkey.openai.com` → `selector1-openai-com._domainkey.openaiinc.onmicrosoft.com` |
+| Final TXT Owner | `selector1-openai-com._domainkey.openaiinc.onmicrosoft.com` |
+| CNAME resolution | `INFO — 1 CNAME hop` |
 
 ## External DNSSEC
 

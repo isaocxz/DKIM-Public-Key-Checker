@@ -69,6 +69,15 @@ button{padding:10px 18px;border:0;border-radius:8px;background:#222;color:#fff;f
 button.secondary{background:#666;margin-left:8px}
 .grid{display:grid;grid-template-columns:190px 1fr;gap:8px 16px}
 .label{color:#666}.value{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.resolution-card{border:1px solid #d9dde3;border-radius:9px;background:#fafbfc;padding:14px 16px;margin-bottom:18px}
+.resolution-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;font-weight:800}
+.resolution-badge{display:inline-block;border-radius:999px;background:#e8eef5;color:#245b91;padding:4px 9px;font-size:11px;white-space:nowrap}
+.resolution-path{display:grid;gap:6px}
+.resolution-node{border-left:4px solid #7b8794;border-radius:6px;background:#fff;padding:9px 12px}
+.resolution-node.final{border-left-color:#2d8a52;background:#f0f8f3}
+.resolution-node-label{color:#666;font-size:11px;font-weight:700;margin-bottom:3px}
+.resolution-node-value{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.resolution-connector{color:#68707a;font-size:12px;font-weight:700;padding-left:15px}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px solid #e1e1e1;padding:12px;border-radius:8px}
 .hidden{display:none}.note{font-size:13px;color:#666}.ok{font-weight:700}.error{font-weight:700}
 .raw{margin-top:18px}.section{margin-top:22px;padding-top:16px;border-top:1px solid #e5e5e5}.status-ok{font-weight:700}.status-warn{font-weight:700}.status-bad{font-weight:700}.summary{font-size:18px;font-weight:700}
@@ -158,8 +167,14 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
     <div class="section">
       <div class="detail-kicker">1. DNS / TXT Record</div>
       <h3>DNS / TXT Record</h3>
+      <div class="resolution-card">
+        <div class="resolution-header">
+          <span>DNS Resolution Path</span>
+          <span id="cnameHopBadge" class="resolution-badge"></span>
+        </div>
+        <div id="dnsResolutionPath" class="resolution-path"></div>
+      </div>
       <div class="grid">
-        <div class="label">Name</div><div id="dnsName" class="value"></div>
         <div class="label">Type</div><div id="dnsType" class="value"></div>
         <div class="label">TTL</div><div id="dnsTtl" class="value"></div>
         <div class="label">TXT RRs</div><div id="txtRrs" class="value"></div>
@@ -475,6 +490,96 @@ function validationOverall(items) {
   return "PASS";
 }
 
+function normalizeDnsName(name) {
+  return name.replace(/\.$/, "").toLowerCase();
+}
+
+function orderCnameChain(cnames, requestedName) {
+  const recordsByOwner = new Map();
+  for (const record of cnames) {
+    recordsByOwner.set(normalizeDnsName(record.owner), record);
+  }
+
+  const chain = [];
+  const visited = new Set();
+  let current = normalizeDnsName(requestedName);
+
+  while (recordsByOwner.has(current)) {
+    if (visited.has(current)) {
+      throw new Error("The DNS response contains a CNAME loop.");
+    }
+    visited.add(current);
+
+    const record = recordsByOwner.get(current);
+    chain.push(record);
+    current = normalizeDnsName(record.target);
+  }
+
+  return chain;
+}
+
+function appendResolutionNode(container, label, value, isFinal=false) {
+  const node = document.createElement("div");
+  node.className = `resolution-node${isFinal ? " final" : ""}`;
+
+  const nodeLabel = document.createElement("div");
+  nodeLabel.className = "resolution-node-label";
+  nodeLabel.textContent = label;
+
+  const nodeValue = document.createElement("div");
+  nodeValue.className = "resolution-node-value";
+  nodeValue.textContent = value;
+
+  node.append(nodeLabel, nodeValue);
+  container.append(node);
+}
+
+function appendResolutionConnector(container) {
+  const connector = document.createElement("div");
+  connector.className = "resolution-connector";
+  connector.textContent = "↓ CNAME";
+  container.append(connector);
+}
+
+function renderDnsResolutionPath(requestedName, chain, finalOwner) {
+  const container = $("dnsResolutionPath");
+  const badge = $("cnameHopBadge");
+  container.replaceChildren();
+
+  if (!requestedName) {
+    badge.textContent = "Not available";
+    appendResolutionNode(container, "DNS lookup", "—", true);
+    return;
+  }
+
+  if (!finalOwner) {
+    badge.textContent = "Lookup failed";
+    appendResolutionNode(container, "Requested", requestedName, true);
+    return;
+  }
+
+  if (!chain.length) {
+    badge.textContent = "Direct";
+    appendResolutionNode(container, "Direct TXT Owner", finalOwner, true);
+    return;
+  }
+
+  const hopLabel = chain.length === 1 ? "hop" : "hops";
+  badge.textContent = `CNAME · ${chain.length} ${hopLabel}`;
+  appendResolutionNode(container, "Requested", requestedName);
+
+  for (let index = 0; index < chain.length; index++) {
+    appendResolutionConnector(container);
+    const isFinal = index === chain.length - 1;
+    appendResolutionNode(
+      container,
+      isFinal ? "Final TXT Owner" : "Alias",
+      chain[index].target,
+      isFinal
+    );
+  }
+}
+
 const VALIDATION_DESCRIPTIONS = {
   "Source":"Shows whether the record came from DNS or direct TXT input.",
   "Key record parsing":"Checks that the DKIM key record can be parsed into tags.",
@@ -489,6 +594,7 @@ const VALIDATION_DESCRIPTIONS = {
   "TXT RRs":"Checks that exactly one TXT RR exists.",
   "TXT character-strings":"Counts character-strings in the selected TXT RR.",
   "DNSSEC":"Shows DNSSEC status reported by the selected resolver's AD bit.",
+  "CNAME resolution":"Shows the alias hop count and final TXT owner.",
   "RFC tag-list syntax":"Checks RFC 6376 tag=value list syntax.",
   "Duplicate tags":"Checks that DKIM tags are not duplicated.",
   "v= version":"Checks the DKIM key-record version.",
@@ -629,7 +735,7 @@ function renderDnsLookupFailure(name, resolver, detail) {
     timeZoneName:"short"
   });
 
-  $("dnsName").textContent = name || "—";
+  renderDnsResolutionPath(name, [], null);
   $("dnsType").textContent = "TXT";
   $("dnsTtl").textContent = "—";
   $("txtRrs").textContent = "—";
@@ -900,6 +1006,11 @@ async function analyze(record, meta={}) {
     checks.push(validation("info","TXT character-strings",`${info.chunks.length}`,"dns"));
     if (isDnsSource(meta)) {
       checks.push(validation("info","DNSSEC",meta.dnssec || "Not checked","dns"));
+      const cnameChain = meta.cnameChain || [];
+      const cnameDetail = cnameChain.length
+        ? `${cnameChain.length} CNAME ${cnameChain.length === 1 ? "hop" : "hops"}; final TXT owner ${meta.name}`
+        : `Direct TXT owner ${meta.name}`;
+      checks.push(validation("info","CNAME resolution",cnameDetail,"dns"));
     }
 
     // 2. DKIM Key Record
@@ -983,7 +1094,11 @@ async function analyze(record, meta={}) {
       second: "2-digit",
       timeZoneName: "short"
     });
-    $("dnsName").textContent = meta.name || "—";
+    renderDnsResolutionPath(
+      meta.requestedName || "",
+      meta.cnameChain || [],
+      isDnsSource(meta) ? meta.name || "" : ""
+    );
     $("dnsType").textContent = meta.type || "TXT";
     $("dnsTtl").textContent = meta.ttl != null ? `${meta.ttl} seconds` : "—";
     $("txtRrs").textContent = meta.txtRrCount !== undefined ? String(meta.txtRrCount) : "—";
@@ -1132,7 +1247,7 @@ function readName(bytes, offset) {
   return {name:labels.join("."), next:end};
 }
 
-/* Minimal RFC 8484 DNS wire parser for IN/TXT answers. */
+/* Minimal RFC 8484 DNS wire parser for IN/TXT and CNAME answers. */
 function parseDnsTxtMessage(ab, expectedId) {
   const bytes=new Uint8Array(ab), v=new DataView(ab);
   if(bytes.length<12) throw new Error("The DNS response is too short.");
@@ -1148,6 +1263,7 @@ function parseDnsTxtMessage(ab, expectedId) {
   let o=12;
   for(let i=0;i<qd;i++){ const n=readName(bytes,o); o=n.next+4; }
   const answers=[];
+  const cnames=[];
   for(let i=0;i<an;i++){
     const n=readName(bytes,o); o=n.next;
     const type=v.getUint16(o), cls=v.getUint16(o+2), ttl=v.getUint32(o+4), rdlen=v.getUint16(o+8);
@@ -1162,10 +1278,16 @@ function parseDnsTxtMessage(ab, expectedId) {
         x+=l;
       }
       answers.push({name:n.name,type,ttl,chunks,logical:chunks.join("")});
+    } else if(type===5 && cls===1) {
+      const target = readName(bytes, rstart);
+      if (target.next !== rend) {
+        throw new Error("The CNAME RDATA length is invalid.");
+      }
+      cnames.push({owner:n.name, target:target.name, ttl});
     }
     o=rend;
   }
-  return {ad,answers,bytes};
+  return {ad,answers,cnames,bytes};
 }
 
 function toBase64Url(bytes) {
@@ -1320,7 +1442,18 @@ async function dnsLookup() {
   try {
     const {ab,id}=await dohWireQuery(resolver,name,16);
     const parsed=parseDnsTxtMessage(ab,id);
-    if(!parsed.answers.length) {
+
+    // Recursive resolvers return the CNAME chain and final TXT RRset in one
+    // response. Use only TXT records owned by the final target; avoiding a
+    // follow-up query also keeps the displayed AD bit tied to this response.
+    const cnameChain = orderCnameChain(parsed.cnames, name);
+    const finalOwner = cnameChain.length
+      ? cnameChain[cnameChain.length - 1].target
+      : name;
+    const finalAnswers = parsed.answers.filter(answer =>
+      normalizeDnsName(answer.name) === normalizeDnsName(finalOwner));
+
+    if(!finalAnswers.length) {
       renderDnsLookupFailure(name,resolver,"No TXT record found");
       return;
     }
@@ -1343,8 +1476,8 @@ async function dnsLookup() {
      * RR so malformed/missing-p records can still be fully validated.
      */
     const selected =
-      parsed.answers.find(a=>/(?:^|;)\s*p\s*=/i.test(a.logical))
-      || parsed.answers[0];
+      finalAnswers.find(a=>/(?:^|;)\s*p\s*=/i.test(a.logical))
+      || finalAnswers[0];
 
     // Re-create quoted presentation solely for the common analysis path;
     // chunk boundaries came from the actual TXT RDATA length octets.
@@ -1355,11 +1488,13 @@ async function dnsLookup() {
 
     await analyze(presentation,{
       source:`${resolver.label} / DoH (RFC 8484 wire format)`,
+      requestedName:name,
       name:selected.name || name,
       type:"TXT",
       ttl:selected.ttl,
       dnssec:parsed.ad ? "Secure (resolver AD=true)" : "Not authenticated (resolver AD=false)",
-      txtRrCount:parsed.answers.length,
+      txtRrCount:finalAnswers.length,
+      cnameChain,
       soa,
       rawChunks:selected.chunks
     });
