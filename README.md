@@ -287,6 +287,10 @@ DNS message encoding and response parsing are implemented directly in JavaScript
 
 No installation or server-side runtime is required.
 
+## Testing
+
+Test cases are defined in [`DKIM-VALIDATION-TEST-CASES.md`](DKIM-VALIDATION-TEST-CASES.md), with expected results in [`dkim-validation-expected-results.tsv`](dkim-validation-expected-results.tsv). DNS fixtures are provided as a Cloudflare-compatible BIND zone file in [`dkim-validation-test-zone.txt`](dkim-validation-test-zone.txt). Serve the repository over localhost and run the cases in DNS Lookup mode.
+
 ## Standards
 
 - RFC 6376 — DomainKeys Identified Mail (DKIM) Signatures

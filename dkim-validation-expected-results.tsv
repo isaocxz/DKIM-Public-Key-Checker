@@ -1,0 +1,35 @@
+Test ID	FQDN	Expected Overall	Validation results
+TC-DNS-001	single-string._domainkey.isaocxz.com	PASS (Warnings)	TXT RRs: PASS (1) / TXT character-strings: INFO (1) / RSA key length: WARN 1024 bit
+TC-DNS-002	multi-string._domainkey.isaocxz.com	PASS	TXT RRs: PASS (1) / TXT character-strings: INFO (2) / RSA key length: PASS 2048 bit
+TC-DNS-003	multi-rr._domainkey.isaocxz.com	FAIL	TXT RRs: FAIL (2)
+TC-DNSSEC-001	smtpapi._domainkey.cloudflare.com	VARIABLE	DNS TXT lookup: PASS / TXT RRs: PASS (1) / DNSSEC: INFO Secure (resolver AD=true); key and overall results may change
+TC-TAG-001	default-tags._domainkey.isaocxz.com	PASS	RFC version: PASS (v= omitted; default DKIM1) / Key type: PASS (k= omitted; default rsa) / Service type: PASS (s= omitted; default *)
+TC-TAG-002	unknown-tag._domainkey.isaocxz.com	PASS	RFC tag-list syntax: PASS / Unknown tags: INFO (x_unit_test)
+TC-TAG-003	duplicate-p._domainkey.isaocxz.com	FAIL	Duplicate tags: FAIL (p)
+TC-TAG-004	invalid-tag-start._domainkey.isaocxz.com	FAIL	RFC tag-list syntax: FAIL (invalid tag name 1test)
+TC-TAG-005	invalid-tag-hyphen._domainkey.isaocxz.com	FAIL	RFC tag-list syntax: FAIL (invalid tag name x-test)
+TC-TAG-006	missing-tag-equals._domainkey.isaocxz.com	FAIL	RFC tag-list syntax: FAIL (malformed field malformed)
+TC-TAG-007	empty-tag-name._domainkey.isaocxz.com	FAIL	RFC tag-list syntax: FAIL (empty tag name)
+TC-TAG-008	empty-tag-list-item._domainkey.isaocxz.com	FAIL	RFC tag-list syntax: FAIL (empty tag-list element)
+TC-CASE-001	uppercase-p._domainkey.isaocxz.com	FAIL	p= tag: FAIL (missing) / Unknown tags: INFO (P) / Public-key checks: INFO (not evaluated)
+TC-CASE-002	uppercase-v._domainkey.isaocxz.com	PASS	RFC version: PASS (v= omitted; default DKIM1) / Unknown tags: INFO (V) / RSA key length: PASS 2048 bit
+TC-V-001	invalid-version._domainkey.isaocxz.com	FAIL	RFC version: FAIL (v=DKIM2)
+TC-V-002	version-not-first._domainkey.isaocxz.com	FAIL	RFC version: PASS (DKIM1) / v= tag position: FAIL (not first)
+TC-H-001	invalid-h-empty-item._domainkey.isaocxz.com	FAIL	Hash algorithms: FAIL (empty list item)
+TC-H-002	invalid-h-token._domainkey.isaocxz.com	FAIL	Hash algorithms: FAIL (invalid token)
+TC-H-003	empty-h._domainkey.isaocxz.com	FAIL	Hash algorithms: FAIL (h= is present but empty)
+TC-H-004	invalid-h-trailing-hyphen._domainkey.isaocxz.com	FAIL	Hash algorithms: FAIL (token ends with a hyphen)
+TC-K-001	empty-k._domainkey.isaocxz.com	FAIL	Key type: FAIL (k= is present but empty)
+TC-K-002	ed25519._domainkey.isaocxz.com	PASS	Key type: PASS (k=ed25519) / p= public key: PASS (present) / Base64: PASS / Ed25519 public key: PASS 32 bytes (256 bit)
+TC-N-001	invalid-n-encoding._domainkey.isaocxz.com	FAIL	Notes: FAIL (invalid quoted-printable escape)
+TC-S-001	invalid-s-empty-item._domainkey.isaocxz.com	FAIL	Service type: FAIL (empty list item)
+TC-S-002	empty-s._domainkey.isaocxz.com	FAIL	Service type: FAIL (s= is present but empty)
+TC-T-001	invalid-t-token._domainkey.isaocxz.com	FAIL	Selector flags: FAIL (invalid token)
+TC-T-002	empty-t._domainkey.isaocxz.com	FAIL	Selector flags: FAIL (t= is present but empty)
+TC-P-001	missing-p._domainkey.isaocxz.com	FAIL	p= tag: FAIL (missing) / Public-key checks: INFO (not evaluated)
+TC-P-002	revoked._domainkey.isaocxz.com	FAIL	p= tag: PASS (present) / p= public key: FAIL (empty/revoked) / Public-key checks: INFO (not evaluated)
+TC-P-003	invalid-base64._domainkey.isaocxz.com	FAIL	Base64: FAIL / SPKI and RSA: INFO (not evaluated)
+TC-P-004	invalid-key._domainkey.isaocxz.com	FAIL	Base64: PASS / SPKI: FAIL / RSA public key: INFO (not evaluated)
+TC-RSA-001	rsa512._domainkey.isaocxz.com	FAIL	Base64 / SPKI / RSA: PASS / RSA key length: FAIL 512 bit
+TC-RSA-002	rsa1024._domainkey.isaocxz.com	PASS (Warnings)	Base64 / SPKI / RSA: PASS / RSA key length: WARN 1024 bit
+TC-RSA-003	rsa2048._domainkey.isaocxz.com	PASS	Base64 / SPKI / RSA: PASS / RSA key length: PASS 2048 bit

@@ -1,14 +1,13 @@
 ; DKIM Public Key Checker - DNS Test Zone
-; Standard BIND-style zone file.
+; Standard BIND-style zone file that can be imported directly into
+; Cloudflare Authoritative DNS.
 ; Parenthesized multiline TXT records preserve character-string boundaries.
-; Route 53 DNS supports these records, but its zone-file importer does not
-; accept every standard BIND TXT representation; use its API when needed.
 ;
 ; Human-readable test specifications and expected results are documented in
-; TEST-CASES.md. Test IDs in this file correspond to headings in that file.
+; DKIM-VALIDATION-TEST-CASES.md. Test IDs in this file correspond to headings in that file.
 ; SOA and NS records are intentionally omitted.
 ;
-$ORIGIN example.com.
+$ORIGIN isaocxz.com.
 $TTL 3600
 
 ; TC-DNS-001: One TXT RR containing one character-string.
@@ -131,6 +130,13 @@ empty-tag-name._domainkey 3600 IN TXT (
   "RMpwIDAQAB"
 )
 
+; TC-TAG-008: An empty tag-list element is invalid except for the optional trailing semicolon.
+empty-tag-list-item._domainkey 3600 IN TXT (
+  "v=DKIM1;; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
 ; TC-H-001: Empty list element is invalid in h=.
 invalid-h-empty-item._domainkey 3600 IN TXT (
   "v=DKIM1; h=sha256::sha1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
@@ -148,6 +154,13 @@ invalid-h-token._domainkey 3600 IN TXT (
 ; TC-H-003: h= requires at least one algorithm.
 empty-h._domainkey 3600 IN TXT (
   "v=DKIM1; h=; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
+  "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
+  "RMpwIDAQAB"
+)
+
+; TC-H-004: A hyphenated-word cannot end with a hyphen.
+invalid-h-trailing-hyphen._domainkey 3600 IN TXT (
+  "v=DKIM1; h=sha256-; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArTHTqMjkQg/rBYEecWrtrWwUxGnZ7rKDfjzpwO2o9EPA9dNEZplZ3h3zhwbokbLEZ/l7R6/VM8YntsIhkv0MzgZPxulLf6hVeRQAHcaH9ZHsWy0aK6yHBbchqmusRoVEQUnIiDXq+Y"
   "AvCR1SCFOZTGDnLdzBZgnorysMMQf+nOfF0F1k1A5doh75iV8i96PAc3ZLcfjWz64OpS3jXldJVP8krpQMKBsRbOy61fHLgwiGq48rgUxCVu6qh7h5mUeGbxys1WfUBEr5vJVevmyq/r4A53ZQqY7lQo9gdLbXady/mdJSanUU2mNfaoINNSuKW4E1cCeSVA8zbPTtQ/"
   "RMpwIDAQAB"
 )
