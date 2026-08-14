@@ -38,6 +38,7 @@ DNS Lookup mode                         TXT Record mode
 | Capability | Typical online DKIM checker | This checker |
 | --- | :---: | :---: |
 | DKIM record lookup | ✓ | ✓ |
+| Complete CNAME chain and final TXT owner | Usually not shown | ✓ |
 | Basic syntax validation | ✓ | ✓ |
 | RSA key length | Often | ✓ |
 | Ed25519 key format and length | Varies | ✓ |
