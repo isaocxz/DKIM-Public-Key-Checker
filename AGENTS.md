@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository contains a client-side DKIM public-key checker. The application is implemented as a single `index.html` file and runs entirely in the browser. There is no build step or package manager.
+This repository contains a client-side DKIM public-key checker. The application uses `index.html`, `styles.css`, and `app.js` and runs entirely in the browser. There is no build step or package manager.
 
 ## Working rules
 

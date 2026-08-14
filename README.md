@@ -256,13 +256,15 @@ When a selector is an alias, the checker displays the CNAME chain returned by th
 ## Implementation
 
 ```text
-HTML / CSS / JavaScript
-        │
-        ├─ Fetch API        → DoH transport
-        ├─ Web Crypto API   → SPKI / RSA
-        ├─ Base64 decoder   → Ed25519 raw-key length
-        └─ Uint8Array /
-           DataView         → DNS wire format
+index.html   → Page structure
+styles.css  → Presentation
+app.js      → Validation and DNS processing
+               │
+               ├─ Fetch API        → DoH transport
+               ├─ Web Crypto API   → SPKI / RSA
+               ├─ Base64 decoder   → Ed25519 raw-key length
+               └─ Uint8Array /
+                  DataView         → DNS wire format
 ```
 
 **No external JavaScript libraries or frameworks are used.**
