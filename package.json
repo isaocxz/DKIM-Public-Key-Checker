@@ -1,0 +1,15 @@
+{
+  "name": "dkim-public-key-checker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10"
+  }
+}

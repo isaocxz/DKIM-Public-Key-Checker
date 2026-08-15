@@ -279,7 +279,8 @@ app.js      → UI, DoH, and DNS wire processing
                     └─ Base64 decoder → Ed25519 raw-key length
 ```
 
-**No external JavaScript libraries or frameworks are used.**
+**No external JavaScript libraries or frameworks are used at runtime.** Vitest
+is used only for development-time logic tests.
 
 DNS message encoding and response parsing are implemented directly in JavaScript.
 
@@ -310,7 +311,22 @@ static HTTP server.
 
 ## Testing
 
-Test cases are defined in [`DKIM-VALIDATION-TEST-CASES.md`](DKIM-VALIDATION-TEST-CASES.md), with expected results in [`dkim-validation-expected-results.tsv`](dkim-validation-expected-results.tsv). DNS fixtures are provided as a Cloudflare-compatible BIND zone file in [`dkim-validation-test-zone.txt`](dkim-validation-test-zone.txt). Serve the repository over localhost and run the cases in DNS Lookup mode.
+Logic tests require Node.js 24 LTS and npm. Install the development dependency
+from the committed lockfile, then run the tests:
+
+```powershell
+npm ci
+npm test
+```
+
+The Vitest suite runs without DNS or other network access. DNS-backed and UI
+regression tests remain manual. Their cases are defined in
+[`DKIM-VALIDATION-TEST-CASES.md`](DKIM-VALIDATION-TEST-CASES.md), with expected
+results in
+[`dkim-validation-expected-results.tsv`](dkim-validation-expected-results.tsv).
+DNS fixtures are provided as a Cloudflare-compatible BIND zone file in
+[`dkim-validation-test-zone.txt`](dkim-validation-test-zone.txt). Serve the
+repository over localhost and run those cases in DNS Lookup mode.
 
 ## Standards
 

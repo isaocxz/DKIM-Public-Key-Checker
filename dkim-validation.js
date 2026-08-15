@@ -371,10 +371,12 @@ export {
   KNOWN_DKIM_TAGS,
   addRfc6376Checks,
   countPChunks,
+  decodeBase64Strict,
   extractP,
   inspectEd25519PublicKey,
   inspectRsaPublicKey,
   parseTags,
+  validateQpSection,
   validation,
   validationOverall
 };

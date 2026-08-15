@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository contains a client-side DKIM public-key checker. The application uses `index.html`, `styles.css`, and `app.js` and runs entirely in the browser. There is no build step or package manager.
+This repository contains a client-side DKIM public-key checker. The application uses `index.html`, `styles.css`, `app.js`, and browser-native JavaScript modules. It runs entirely in the browser with no build step or runtime package dependencies. npm and Vitest are used only for development-time logic tests.
 
 ## Working rules
 
@@ -15,7 +15,7 @@ This repository contains a client-side DKIM public-key checker. The application 
 - Preserve unrelated modifications and untracked files. Never discard or rewrite user changes to make the worktree clean.
 - Inspect the current diff before editing and again before handing off work.
 - Keep source and documentation files UTF-8 encoded.
-- Do not add or use external libraries, frameworks, CDNs, or package dependencies unless the user explicitly approves them.
+- Do not add runtime libraries, frameworks, CDNs, or package dependencies unless the user explicitly approves them. Do not add development dependencies beyond the approved test tooling without explicit approval.
 - The application may send processed data externally only through DNS-over-HTTPS (DoH) requests required for DNS lookups. User-initiated navigation through an explicitly clicked external link is permitted and is not considered application data transmission. Do not add analytics, telemetry, tracking, error reporting, or calls to any other external service.
 - Write code for straightforward human review. Prefer explicit, conventional control flow over clever, compressed, or difficult-to-recognize idioms.
 - Add a concise comment when a reviewer cannot readily determine why a statement is necessary or how standards-driven behavior is implemented. Explain intent or constraints rather than restating the code.
@@ -36,6 +36,7 @@ This repository contains a client-side DKIM public-key checker. The application 
 
 - Test every feature addition, behavior change, and refactoring. For refactoring, verify that existing observable behavior remains unchanged.
 - For every change, run the most focused relevant test first, then check for regressions in adjacent behavior.
+- Run `npm test` for changes that affect the extracted validation logic. Keep `package-lock.json` committed so the development test environment is reproducible.
 - Run `git diff --check` before handing off changes.
 - Serve the repository over localhost for browser tests, for example:
 
