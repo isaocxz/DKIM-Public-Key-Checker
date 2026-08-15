@@ -269,13 +269,14 @@ When a selector is an alias, the checker displays the CNAME chain returned by th
 ```text
 index.html   → Page structure
 styles.css  → Presentation
-app.js      → Validation and DNS processing
+app.js      → UI, DoH, and DNS wire processing
                │
                ├─ Fetch API        → DoH transport
-               ├─ Web Crypto API   → SPKI / RSA
-               ├─ Base64 decoder   → Ed25519 raw-key length
-               └─ Uint8Array /
-                  DataView         → DNS wire format
+               ├─ Uint8Array /
+               │  DataView         → DNS wire format
+               └─ dkim-validation.js
+                    ├─ Web Crypto API → SPKI / RSA
+                    └─ Base64 decoder → Ed25519 raw-key length
 ```
 
 **No external JavaScript libraries or frameworks are used.**
@@ -295,12 +296,17 @@ DNS message encoding and response parsing are implemented directly in JavaScript
 
 ## Requirements
 
+Run the checker from an HTTPS site or a localhost static HTTP server. Direct
+`file://` access is not supported because the application uses JavaScript
+modules.
+
 | Mode | Requirements |
 | --- | --- |
 | DNS Lookup mode | Current Chrome, Edge, Firefox, or Safari; Web Crypto; Fetch; HTTPS access to the selected DoH resolver |
 | TXT Record mode | Current browser with Web Crypto; no DNS/network access required |
 
-No installation or server-side runtime is required.
+No application backend or build step is required. Local development uses a
+static HTTP server.
 
 ## Testing
 
