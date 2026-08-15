@@ -79,6 +79,10 @@ https://example.com/?fqdn=selector._domainkey.example.com
 A manual DNS lookup also updates the current URL without reloading the page,
 so the checked name can be copied, bookmarked, or shared.
 
+While a lookup is running, the DNS input controls are disabled and the lookup
+button shows `Looking up...`, so another lookup cannot be started. The controls
+are restored when the lookup finishes.
+
 ```text
 Browser
    │ HTTPS / RFC 8484 DoH

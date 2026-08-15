@@ -22,6 +22,16 @@ import {
 const $ = id => document.getElementById(id);
 
 const TXT_RECORD_SOURCE = "TXT Record mode";
+let dnsLookupInProgress = false;
+
+function setDnsLookupInProgress(inProgress) {
+  dnsLookupInProgress = inProgress;
+  $("fqdn").disabled = inProgress;
+  $("resolver").disabled = inProgress;
+  $("dnsCheck").disabled = inProgress;
+  $("dnsCheck").textContent = inProgress ? "Looking up..." : "Lookup & Validate";
+  $("dnsMode").setAttribute("aria-busy", String(inProgress));
+}
 
 function showError(prefix, error) {
   const message = error?.message || String(error);
@@ -828,6 +838,7 @@ function updateUrlFqdn(name) {
 }
 
 async function dnsLookup() {
+  if (dnsLookupInProgress) return;
   hideOutput();
 
   const name=$("fqdn").value.trim().replace(/\.$/,"");
@@ -846,6 +857,7 @@ async function dnsLookup() {
     return;
   }
 
+  setDnsLookupInProgress(true);
   updateUrlFqdn(name);
 
   try {
@@ -910,6 +922,8 @@ async function dnsLookup() {
   } catch(e) {
     // DNS acquisition/response failures belong to the validation flow.
     renderDnsLookupFailure(name,resolver,dnsFailureDetail(e));
+  } finally {
+    setDnsLookupInProgress(false);
   }
 }
 
