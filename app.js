@@ -12,13 +12,18 @@ import {
   validationOverall
 } from "./dkim-validation.js";
 import { validateDkimFqdn } from "./dkim-fqdn.js";
+import {
+  buildDnsQuery,
+  parseDnsSoaMessage,
+  parseDnsTxtMessage
+} from "./dns-wire.js";
 
 /*
  * Architecture:
  * DNS and TXT input are separate adapters; both converge on analyze().
  * dkim-validation.js owns shared DKIM parsing and public-key inspection.
- * analyze() coordinates those results with rendering, while DNS wire parsing
- * preserves real TXT chunk boundaries.
+ * dns-wire.js preserves DNS message and TXT character-string boundaries.
+ * analyze() coordinates those results with rendering.
  */
 const $ = id => document.getElementById(id);
 
@@ -575,211 +580,15 @@ async function analyze(record, meta={}) {
   }
 }
 
-function encodeDnsName(name) {
-  const out = [];
-  for (const label of name.split(".")) {
-    const bytes = new TextEncoder().encode(label);
-    if (!bytes.length || bytes.length > 63) throw new Error("The DNS label length is invalid.");
-    out.push(bytes.length, ...bytes);
-  }
-  out.push(0);
-  return out;
-}
-
-/*
- * Build a single-question IN-class DNS query.
- * qtype 16 = TXT, qtype 6 = SOA.
- */
-function buildDnsQuery(name, qtype) {
-  const qname = encodeDnsName(name);
-
-  /*
-   * Add an EDNS(0) OPT pseudo-RR and set DO (DNSSEC OK).
-   * This asks the recursive resolver to include DNSSEC data and allows us to
-   * use the response AD bit as the resolver-reported DNSSEC status.
-   *
-   * This checker does not validate RRSIG/DNSKEY itself.
-   */
-  const questionLength = qname.length + 4;
-  const optLength = 11;
-  const buf = new Uint8Array(12 + questionLength + optLength);
-  const v = new DataView(buf.buffer);
-  const id = crypto.getRandomValues(new Uint16Array(1))[0];
-
-  v.setUint16(0,id);
-  v.setUint16(2,0x0100); // RD = Recursion Desired
-  v.setUint16(4,1);      // QDCOUNT = 1
-  v.setUint16(10,1);     // ARCOUNT = 1 (EDNS OPT)
-
-  buf.set(qname,12);
-  let o=12+qname.length;
-  v.setUint16(o,qtype); o+=2;
-  v.setUint16(o,1);     o+=2; // QCLASS = IN
-
-  // RFC 6891 OPT pseudo-RR.
-  buf[o++]=0;            // root owner name
-  v.setUint16(o,41); o+=2;    // TYPE = OPT
-  v.setUint16(o,1232); o+=2;  // UDP payload size (informational for DoH)
-  v.setUint32(o,0x00008000); o+=4; // extended RCODE/version + DO=1
-  v.setUint16(o,0);             // RDLEN = 0
-
-  return {buf,id};
-}
-
-
-function readName(bytes, offset) {
-  let labels=[], o=offset, end=null, guard=0;
-
-  while (guard++ < 128) {
-    if (o >= bytes.length) throw new Error("The DNS name is truncated.");
-
-    const len=bytes[o];
-    if ((len & 0xC0)===0xC0) {
-      if (o+1 >= bytes.length) throw new Error("The DNS compression pointer is truncated.");
-      const ptr=((len&0x3F)<<8)|bytes[o+1];
-      if (ptr >= bytes.length) throw new Error("The DNS compression pointer is invalid.");
-      if (end===null) end=o+2;
-      o=ptr;
-      continue;
-    }
-
-    if ((len & 0xC0)!==0) throw new Error("The DNS label encoding is invalid.");
-    if (len===0) {
-      if(end===null) end=o+1;
-      break;
-    }
-
-    o++;
-    if (o+len > bytes.length) throw new Error("The DNS label is truncated.");
-    labels.push(new TextDecoder().decode(bytes.slice(o,o+len)));
-    o+=len;
-  }
-
-  if (guard>=128) throw new Error("DNS name compression loop");
-  return {name:labels.join("."), next:end};
-}
-
-/* Minimal RFC 8484 DNS wire parser for IN/TXT and CNAME answers. */
-function parseDnsTxtMessage(ab, expectedId) {
-  const bytes=new Uint8Array(ab), v=new DataView(ab);
-  if(bytes.length<12) throw new Error("The DNS response is too short.");
-  if(v.getUint16(0)!==expectedId) throw new Error("The DNS transaction ID does not match.");
-  const flags=v.getUint16(2), rcode=flags&0xF;
-  if(rcode!==0) {
-    const err = new Error(`DNS ${dnsRcodeName(rcode)}`);
-    err.dnsRcode = rcode;
-    throw err;
-  }
-  const ad=!!(flags&0x0020);
-  const qd=v.getUint16(4), an=v.getUint16(6);
-  let o=12;
-  for(let i=0;i<qd;i++){ const n=readName(bytes,o); o=n.next+4; }
-  const answers=[];
-  const cnames=[];
-  for(let i=0;i<an;i++){
-    const n=readName(bytes,o); o=n.next;
-    const type=v.getUint16(o), cls=v.getUint16(o+2), ttl=v.getUint32(o+4), rdlen=v.getUint16(o+8);
-    o+=10; const rstart=o, rend=o+rdlen;
-    if(rend>bytes.length) throw new Error("The DNS RDATA length is invalid.");
-    if(type===16 && cls===1){
-      const chunks=[]; let x=rstart;
-      while(x<rend){
-        const l=bytes[x++];
-        if(x+l>rend) throw new Error("The TXT character-string length is invalid.");
-        chunks.push(new TextDecoder().decode(bytes.slice(x,x+l)));
-        x+=l;
-      }
-      answers.push({name:n.name,type,ttl,chunks,logical:chunks.join("")});
-    } else if(type===5 && cls===1) {
-      const target = readName(bytes, rstart);
-      if (target.next !== rend) {
-        throw new Error("The CNAME RDATA length is invalid.");
-      }
-      cnames.push({owner:n.name, target:target.name, ttl});
-    }
-    o=rend;
-  }
-  return {ad,answers,cnames,bytes};
-}
-
 function toBase64Url(bytes) {
   let bin=""; for(const b of bytes) bin+=String.fromCharCode(b);
   return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
 
 
-/*
- * Parse an SOA response from DNS wire format.
- * SOA RDATA:
- *   MNAME, RNAME, SERIAL, REFRESH, RETRY, EXPIRE, MINIMUM
- *
- * Only MNAME, SERIAL and MINIMUM are exposed in the UI.
- */
-function parseDnsSoaMessage(ab, expectedId) {
-  const bytes=new Uint8Array(ab), v=new DataView(ab);
-  if(bytes.length<12) throw new Error("The DNS response is too short.");
-  if(v.getUint16(0)!==expectedId) throw new Error("The DNS transaction ID does not match.");
-
-  const flags=v.getUint16(2);
-  const rcode=flags&0xF;
-  if(rcode!==0 && rcode!==3) return null; // Ignore non-useful SOA lookup failures.
-
-  const qd=v.getUint16(4), an=v.getUint16(6);
-  let o=12;
-
-  for(let i=0;i<qd;i++){
-    const n=readName(bytes,o);
-    o=n.next+4;
-  }
-
-  for(let i=0;i<an;i++){
-    const owner=readName(bytes,o);
-    o=owner.next;
-
-    const type=v.getUint16(o);
-    const cls=v.getUint16(o+2);
-    const rrTtl=v.getUint32(o+4);
-    const rdlen=v.getUint16(o+8);
-    o+=10;
-
-    const rstart=o, rend=o+rdlen;
-    if(rend>bytes.length) throw new Error("The SOA RDATA length is invalid.");
-
-    if(type===6 && cls===1){
-      const mname=readName(bytes,rstart);
-      const rname=readName(bytes,mname.next);
-      let x=rname.next;
-
-      if(x+20>rend) throw new Error("The SOA RDATA is incomplete.");
-
-      const serial=v.getUint32(x); x+=4;
-      const refresh=v.getUint32(x); x+=4;
-      const retry=v.getUint32(x); x+=4;
-      const expire=v.getUint32(x); x+=4;
-      const minimum=v.getUint32(x);
-
-      /*
-       * RFC 2308 negative-cache TTL is the minimum of the SOA RR TTL
-       * and the SOA.MINIMUM field.
-       */
-      return {
-        zone: owner.name,
-        mname: mname.name,
-        serial,
-        minimum,
-        rrTtl,
-        negativeTtl: Math.min(rrTtl, minimum)
-      };
-    }
-
-    o=rend;
-  }
-
-  return null;
-}
-
 async function dohWireQuery(resolver, name, qtype) {
-  const {buf,id}=buildDnsQuery(name,qtype);
+  const id=crypto.getRandomValues(new Uint16Array(1))[0];
+  const buf=buildDnsQuery(name,qtype,id);
   const url=resolver.endpoint+"?dns="+encodeURIComponent(toBase64Url(buf));
   const res=await fetch(url,{headers:{"Accept":"application/dns-message"}});
   if(!res.ok) {

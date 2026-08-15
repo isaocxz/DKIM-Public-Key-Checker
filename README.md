@@ -279,11 +279,11 @@ When a selector is an alias, the checker processes the CNAME chain and final TXT
 ```text
 index.html   → Page structure
 styles.css  → Presentation
-app.js      → UI, DoH, and DNS wire processing
+app.js      → UI, DoH transport, and lookup orchestration
                │
                ├─ Fetch API        → DoH transport
-               ├─ Uint8Array /
-               │  DataView         → DNS wire format
+               ├─ dns-wire.js      → DNS query encoding and response parsing
+               │     └─ Uint8Array / DataView → DNS wire format
                ├─ dkim-fqdn.js     → DKIM DNS name validation
                └─ dkim-validation.js
                     ├─ Web Crypto API → SPKI / RSA
