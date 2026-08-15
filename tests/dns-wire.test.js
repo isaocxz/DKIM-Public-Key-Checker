@@ -137,6 +137,25 @@ describe("TXT and CNAME response parsing", () => {
     ]);
   });
 
+  test("accepts one zero-length TXT character-string", () => {
+    const txt = resourceRecord(ownerPointer, 16, 300, [0]);
+    const parsed = parseDnsTxtMessage(message({
+      name: requestedName,
+      answers: [txt]
+    }), 0x1234);
+
+    expect(parsed.answers[0].chunks).toEqual([""]);
+    expect(parsed.answers[0].logical).toBe("");
+  });
+
+  test("rejects a TXT RR with empty RDATA", () => {
+    const txt = resourceRecord(ownerPointer, 16, 300, []);
+    const response = message({ name: requestedName, answers: [txt] });
+
+    expect(() => parseDnsTxtMessage(response, 0x1234))
+      .toThrow("The TXT RDATA must contain at least one character-string.");
+  });
+
   test("parses a CNAME followed by the final TXT RR", () => {
     const target = "selector.provider.example";
     const cname = resourceRecord(ownerPointer, 5, 600, dnsName(target));

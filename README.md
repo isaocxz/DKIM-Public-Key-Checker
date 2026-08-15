@@ -272,6 +272,8 @@ Browsers cannot send arbitrary UDP/TCP DNS queries to port 53. DoH allows the br
 
 Wire format is used because it preserves details needed by the checker, including TXT RR boundaries, `character-string` boundaries, DNS header flags, EDNS(0)/DO, RCODE, and SOA data.
 
+A TXT RR must contain at least one length-prefixed `character-string`. An empty RDATA is rejected, while one zero-length `character-string` is valid DNS encoding.
+
 When a selector is an alias, the checker processes the CNAME chain and final TXT RRset returned in a single DoH response. If the resolver cannot complete the CNAME chain, the checker does not issue an additional query to retrieve the final TXT RRset. Keeping the result to one response also means that the displayed DNSSEC status uses the AD bit from that response.
 
 ## Implementation

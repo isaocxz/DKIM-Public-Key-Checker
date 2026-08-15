@@ -160,6 +160,10 @@ export function parseDnsTxtMessage(buffer, expectedId) {
     const rr = readResourceRecordHeader(bytes, view, offset);
 
     if (rr.type === 16 && rr.dnsClass === 1) {
+      if (rr.rdataStart === rr.rdataEnd) {
+        throw new Error("The TXT RDATA must contain at least one character-string.");
+      }
+
       const chunks = [];
       let chunkOffset = rr.rdataStart;
 
