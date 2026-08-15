@@ -13,10 +13,10 @@ import {
 } from "./dkim-validation.js";
 import { validateDkimFqdn } from "./dkim-fqdn.js";
 import {
-  buildDnsQuery,
   parseDnsSoaMessage,
   parseDnsTxtMessage
 } from "./dns-wire.js";
+import { dohWireQuery } from "./doh-transport.js";
 
 /*
  * Architecture:
@@ -580,25 +580,6 @@ async function analyze(record, meta={}) {
   }
 }
 
-function toBase64Url(bytes) {
-  let bin=""; for(const b of bytes) bin+=String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-}
-
-
-async function dohWireQuery(resolver, name, qtype) {
-  const id=crypto.getRandomValues(new Uint16Array(1))[0];
-  const buf=buildDnsQuery(name,qtype,id);
-  const url=resolver.endpoint+"?dns="+encodeURIComponent(toBase64Url(buf));
-  const res=await fetch(url,{headers:{"Accept":"application/dns-message"}});
-  if(!res.ok) {
-    const err = new Error(`DNS over HTTPS error: HTTP ${res.status}`);
-    err.dohHttpStatus = res.status;
-    throw err;
-  }
-  return {ab:await res.arrayBuffer(),id};
-}
-
 /*
  * Find the nearest enclosing authoritative zone by asking for SOA from the
  * DKIM name upward. This also handles delegated _domainkey sub-zones.
@@ -615,7 +596,7 @@ async function findNearestSoa(resolver, fqdn) {
   for(let i=0;i<labels.length;i++){
     const candidate=labels.slice(i).join(".");
     try {
-      const {ab,id}=await dohWireQuery(resolver,candidate,6);
+      const {ab,id}=await dohWireQuery(resolver.endpoint,candidate,6);
       const soa=parseDnsSoaMessage(ab,id);
       if(soa) return soa;
     } catch (_) {
@@ -669,7 +650,7 @@ async function dnsLookup() {
   updateUrlFqdn(name);
 
   try {
-    const {ab,id}=await dohWireQuery(resolver,name,16);
+    const {ab,id}=await dohWireQuery(resolver.endpoint,name,16);
     const parsed=parseDnsTxtMessage(ab,id);
 
     // This implementation processes the CNAME chain and final TXT RRset when
