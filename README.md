@@ -67,6 +67,12 @@ Enter a complete DKIM DNS name:
 selector._domainkey.example.com
 ```
 
+The selector may contain multiple DNS labels. The checker requires one
+`_domainkey` label with a selector before it and a signing domain after it. It
+also enforces the DNS wire-format limits of 63 octets per label and 255 octets
+for the complete name. A single trailing root dot is accepted and removed
+before lookup.
+
 Select a resolver and run **Lookup & Validate**.
 
 To populate the DNS name and run validation automatically, pass it in the
@@ -278,6 +284,7 @@ app.js      → UI, DoH, and DNS wire processing
                ├─ Fetch API        → DoH transport
                ├─ Uint8Array /
                │  DataView         → DNS wire format
+               ├─ dkim-fqdn.js     → DKIM DNS name validation
                └─ dkim-validation.js
                     ├─ Web Crypto API → SPKI / RSA
                     └─ Base64 decoder → Ed25519 raw-key length

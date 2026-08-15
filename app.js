@@ -11,6 +11,7 @@ import {
   validation,
   validationOverall
 } from "./dkim-validation.js";
+import { validateDkimFqdn } from "./dkim-fqdn.js";
 
 /*
  * Architecture:
@@ -841,15 +842,13 @@ async function dnsLookup() {
   if (dnsLookupInProgress) return;
   hideOutput();
 
-  const name=$("fqdn").value.trim().replace(/\.$/,"");
-  if(!name) {
-    showError("Error", new Error("Enter a DKIM FQDN."));
+  const fqdn = validateDkimFqdn($("fqdn").value);
+  if(!fqdn.ok) {
+    showError("Error", new Error(fqdn.error));
     return;
   }
-  if(!name.toLowerCase().includes("._domainkey.")) {
-    showError("Error", new Error("Use the format selector._domainkey.example.com."));
-    return;
-  }
+  const name = fqdn.name;
+  $("fqdn").value = name;
 
   const resolver=RESOLVERS[$("resolver").value];
   if(!resolver) {
