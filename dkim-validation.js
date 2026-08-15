@@ -201,6 +201,12 @@ function validationOverall(items) {
   return "PASS";
 }
 
+function formatKeyTypeTag(value) {
+  if (value === undefined) return "rsa (default)";
+  if (value === "") return "(empty / invalid)";
+  return value;
+}
+
 /* Focused RFC 6376 Section 3.2 and Section 3.6.1 checks. */
 function addRfc6376Checks(checks, info) {
   const startIndex = checks.length;
@@ -373,6 +379,7 @@ export {
   countPChunks,
   decodeBase64Strict,
   extractP,
+  formatKeyTypeTag,
   inspectEd25519PublicKey,
   inspectRsaPublicKey,
   parseTags,

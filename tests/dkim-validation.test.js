@@ -4,6 +4,7 @@ import {
   addRfc6376Checks,
   decodeBase64Strict,
   extractP,
+  formatKeyTypeTag,
   inspectEd25519PublicKey,
   parseTags,
   validateQpSection,
@@ -87,6 +88,16 @@ describe("RFC 6376 validation", () => {
     );
 
     expect(result.status).toBe("fail");
+  });
+});
+
+describe("key type display", () => {
+  test("shows the rsa default only when k= is omitted", () => {
+    expect(formatKeyTypeTag(undefined)).toBe("rsa (default)");
+  });
+
+  test("shows an explicitly empty k= value as invalid", () => {
+    expect(formatKeyTypeTag("")).toBe("(empty / invalid)");
   });
 });
 

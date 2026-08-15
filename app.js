@@ -5,6 +5,7 @@ import {
   addRfc6376Checks,
   countPChunks,
   extractP,
+  formatKeyTypeTag,
   inspectEd25519PublicKey,
   inspectRsaPublicKey,
   validation,
@@ -516,7 +517,7 @@ async function analyze(record, meta={}) {
     // RFC 6376 §3.6.1 key-record tags.
     $("tagV").textContent = info.tags.v || "DKIM1 (default)";
     $("tagH").textContent = info.tags.h || "(default: all acceptable algorithms)";
-    $("tagK").textContent = info.tags.k || "rsa (default)";
+    $("tagK").textContent = formatKeyTypeTag(info.tags.k);
     $("tagN").textContent = info.tags.n || "(empty)";
     $("tagP").textContent =
       pState === "missing" ? "(missing)" :
