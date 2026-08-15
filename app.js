@@ -852,9 +852,9 @@ async function dnsLookup() {
     const {ab,id}=await dohWireQuery(resolver,name,16);
     const parsed=parseDnsTxtMessage(ab,id);
 
-    // Recursive resolvers return the CNAME chain and final TXT RRset in one
-    // response. Use only TXT records owned by the final target; avoiding a
-    // follow-up query also keeps the displayed AD bit tied to this response.
+    // This implementation processes the CNAME chain and final TXT RRset when
+    // both are included in the same resolver response. Avoiding a follow-up
+    // query also keeps the displayed AD bit tied to this response.
     const cnameChain = orderCnameChain(parsed.cnames, name);
     const finalOwner = cnameChain.length
       ? cnameChain[cnameChain.length - 1].target

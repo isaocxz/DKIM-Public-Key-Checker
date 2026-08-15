@@ -182,7 +182,7 @@ empty-k._domainkey 3600 IN TXT (
   "RMpwIDAQAB"
 )
 
-; TC-K-002: Ed25519 is an active DKIM key type; key validation is deferred.
+; TC-K-002: Valid Base64-encoded 32-byte Ed25519 public key.
 ed25519._domainkey 3600 IN TXT "v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo="
 
 ; TC-S-001: Empty list element is invalid in s=.

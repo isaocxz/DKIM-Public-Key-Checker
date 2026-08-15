@@ -319,8 +319,20 @@ npm ci
 npm test
 ```
 
-The Vitest suite runs without DNS or other network access. DNS-backed and UI
-regression tests remain manual. Their cases are defined in
+Testing is divided into three layers:
+
+1. **Logic tests (Vitest)** test parsing, RFC validation, Base64 decoding, and
+   public-key inspection without DNS or a browser. Run them with `npm test`.
+2. **Browser tests** verify user input, displayed results, and URL behavior by
+   serving the repository over localhost.
+3. **DNS-backed tests** verify DoH responses, TXT character-string handling,
+   CNAME resolution, and resolver DNSSEC status using live DNS records.
+
+Run the layers relevant to the change. Validation logic changes require
+Vitest, user-visible changes require browser testing, and DNS behavior changes
+require the DNS-backed regression cases.
+
+The DNS-backed cases are defined in
 [`DKIM-VALIDATION-TEST-CASES.md`](DKIM-VALIDATION-TEST-CASES.md), with expected
 results in
 [`dkim-validation-expected-results.tsv`](dkim-validation-expected-results.tsv).

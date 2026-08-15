@@ -29,7 +29,7 @@ syntax validation implemented by the checker.
 | TC-DNS-003 | `multi-rr` | Reject multiple TXT RRs for one selector | `FAIL` | Implemented |
 | TC-CNAME-001 | `selector1._domainkey.openai.com` | Display the CNAME chain and final TXT owner | Variable; chain and owner must match | Implemented |
 | TC-CNAME-002 | `selector-1` | Follow a three-hop CNAME chain to the final TXT owner | `PASS` | Implemented |
-| TC-DNSSEC-001 | `smtpapi._domainkey.cloudflare.com` | Report a DNSSEC-validated answer from the resolver AD bit | Variable; DNSSEC must be `Secure` | Implemented |
+| TC-DNSSEC-001 | `smtpapi._domainkey.cloudflare.com` | Report the resolver's DNSSEC status from the AD bit | Variable; DNSSEC must be `Secure` | Implemented |
 | TC-TAG-001 | `default-tags` | Apply omitted `v=`, `k=`, and `s=` defaults | `PASS` | Implemented |
 | TC-TAG-002 | `unknown-tag` | Ignore a valid unknown extension tag | `PASS` | Implemented |
 | TC-TAG-003 | `duplicate-p` | Reject a duplicate tag name | `FAIL` | Implemented |
