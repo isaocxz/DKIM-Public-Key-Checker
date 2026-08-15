@@ -38,7 +38,7 @@ DNS Lookup mode                         TXT Record mode
 | Capability | Typical online DKIM checker | This checker |
 | --- | :---: | :---: |
 | DKIM record lookup | ✓ | ✓ |
-| Complete CNAME chain and final TXT owner | Usually not shown | ✓ |
+| CNAME chain and final TXT owner from one DoH response | Usually not shown | ✓ |
 | Basic syntax validation | ✓ | ✓ |
 | RSA key length | Often | ✓ |
 | Ed25519 key format and length | Varies | ✓ |
@@ -272,7 +272,7 @@ Browsers cannot send arbitrary UDP/TCP DNS queries to port 53. DoH allows the br
 
 Wire format is used because it preserves details needed by the checker, including TXT RR boundaries, `character-string` boundaries, DNS header flags, EDNS(0)/DO, RCODE, and SOA data.
 
-When a selector is an alias, the checker displays the CNAME chain returned by the recursive resolver and validates the TXT record at the final owner name.
+When a selector is an alias, the checker processes the CNAME chain and final TXT RRset returned in a single DoH response. If the resolver cannot complete the CNAME chain, the checker does not issue an additional query to retrieve the final TXT RRset. Keeping the result to one response also means that the displayed DNSSEC status uses the AD bit from that response.
 
 ## Implementation
 
