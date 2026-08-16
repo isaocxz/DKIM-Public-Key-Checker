@@ -16,8 +16,9 @@ function toBase64Url(bytes) {
 export async function dohWireQuery(endpoint, name, qtype) {
   const id = crypto.getRandomValues(new Uint16Array(1))[0];
   const query = buildDnsQuery(name, qtype, id);
-  const url = `${endpoint}?dns=${encodeURIComponent(toBase64Url(query))}`;
-  const response = await fetch(url, {
+  const url = new URL(endpoint);
+  url.searchParams.set("dns", toBase64Url(query));
+  const response = await fetch(url.toString(), {
     headers: { "Accept": "application/dns-message" }
   });
 

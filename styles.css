@@ -15,6 +15,7 @@ p{line-height:1.55;color:#444}
 .tab-sub{display:block;font-size:12px;font-weight:400;color:#666;margin-top:4px}
 .mode-panel{border:1px solid #ddd;border-radius:10px;padding:18px;background:#fafafa}
 .field-label{display:block;font-size:13px;font-weight:700;margin:0 0 7px}
+.custom-doh-field{margin-top:14px}
 @media(max-width:620px){.tabs{grid-template-columns:1fr}}
 .validation-summary{display:grid;grid-template-columns:1.5fr repeat(4,1fr);border:1px solid #d9dde3;border-radius:8px;margin:10px 0 16px;background:#fff}
 .validation-summary-item{padding:10px 14px;text-align:center;border-right:1px solid #e1e4e8}

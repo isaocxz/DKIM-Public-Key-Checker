@@ -34,9 +34,15 @@
         <option value="google">Google Public DNS</option>
         <option value="cloudflare">Cloudflare 1.1.1.1</option>
         <option value="quad9">Quad9</option>
+        <option value="custom">Custom DoH endpoint</option>
       </select>
+      <div id="customDohField" class="custom-doh-field hidden">
+        <label class="field-label" for="customDohEndpoint">DoH Endpoint URL</label>
+        <input id="customDohEndpoint" type="url" placeholder="https://resolver.example/dns-query" autocomplete="off" spellcheck="false" aria-describedby="customDohHelp" disabled>
+        <p id="customDohHelp" class="mode-help">Must support RFC 8484 GET requests using DNS wire format. Do not include credentials or other sensitive information in the URL.</p>
+      </div>
       <br><button id="dnsCheck">Lookup &amp; Validate</button>
-      <p class="note">Queries the selected public DNS resolver using RFC 8484 DNS over HTTPS (wire format). The requested FQDN is sent to that resolver.<br>If direct DoH access is unavailable, use TXT Record mode with output from your local DNS tools.</p>
+      <p class="note">Queries the selected DNS resolver using RFC 8484 DNS over HTTPS (wire format). The requested FQDN is sent to that resolver.<br>If direct DoH access is unavailable, use TXT Record mode with output from your local DNS tools.</p>
     </section>
 
     <section id="txtMode" class="mode-panel hidden">

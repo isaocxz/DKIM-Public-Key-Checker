@@ -50,7 +50,7 @@ DNS Lookup mode                         TXT Record mode
 | DNSSEC resolver status | Usually not shown | ✓ |
 | SOA information | Usually not shown | ✓ |
 | Raw TXT Record mode | Varies | ✓ |
-| DNS resolver selection | Varies | ✓ |
+| Preset and custom DoH resolver selection | Varies | ✓ |
 | DNS wire-format parsing | Usually hidden | ✓ |
 | Fully client-side | Varies | ✓ |
 | Offline validation in TXT Record mode | Varies | ✓ |
@@ -74,6 +74,14 @@ for the complete name. A single trailing root dot is accepted and removed
 before lookup.
 
 Select a resolver and run **Lookup & Validate**.
+
+Choose **Custom DoH endpoint** to query another HTTPS resolver that supports
+RFC 8484 GET requests using DNS wire format. The endpoint is used only for the
+current page session and is not stored or added to the page URL. Existing query
+parameters are preserved, but any existing `dns` parameter is replaced for the
+request. Do not include credentials or other sensitive information in the
+endpoint URL. The endpoint must also permit requests from the browser through
+its CORS policy.
 
 To populate the DNS name and run validation automatically, pass it in the
 `fqdn` URL parameter:

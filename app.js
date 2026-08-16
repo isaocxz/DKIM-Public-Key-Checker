@@ -34,6 +34,7 @@ function setDnsLookupInProgress(inProgress) {
   dnsLookupInProgress = inProgress;
   $("fqdn").disabled = inProgress;
   $("resolver").disabled = inProgress;
+  $("customDohEndpoint").disabled = inProgress || $("resolver").value !== "custom";
   $("dnsCheck").disabled = inProgress;
   $("dnsCheck").textContent = inProgress ? "Looking up..." : "Lookup & Validate";
   $("dnsMode").setAttribute("aria-busy", String(inProgress));
@@ -297,7 +298,7 @@ function dnsFailureDetail(error) {
     return `DoH request failed (HTTP ${error.dohHttpStatus})`;
   }
   if (error instanceof TypeError) {
-    return "Network request failed";
+    return "Network request failed. The DoH endpoint may be unreachable or may not allow browser CORS requests.";
   }
   return error?.message || String(error);
 }
@@ -622,6 +623,40 @@ const RESOLVERS = {
   }
 };
 
+function updateCustomDohVisibility() {
+  const customSelected = $("resolver").value === "custom";
+  $("customDohField").classList.toggle("hidden", !customSelected);
+  $("customDohEndpoint").disabled = !customSelected || dnsLookupInProgress;
+}
+
+function getSelectedResolver() {
+  const selected = $("resolver").value;
+  if (selected !== "custom") return RESOLVERS[selected] || null;
+
+  const value = $("customDohEndpoint").value.trim();
+  if (!value) throw new Error("Enter a custom DoH endpoint URL.");
+
+  let endpoint;
+  try {
+    endpoint = new URL(value);
+  } catch (_) {
+    throw new Error("Enter a valid custom DoH endpoint URL.");
+  }
+
+  if (endpoint.protocol !== "https:") {
+    throw new Error("The custom DoH endpoint must use HTTPS.");
+  }
+  // Reject URL credentials before Fetch turns them into a generic TypeError.
+  if (endpoint.username || endpoint.password) {
+    throw new Error("The custom DoH endpoint must not include credentials.");
+  }
+
+  return {
+    label: "Custom DoH endpoint",
+    endpoint: endpoint.toString()
+  };
+}
+
 function updateUrlFqdn(name) {
   const url = new URL(window.location.href);
   url.searchParams.set("fqdn", name);
@@ -640,7 +675,13 @@ async function dnsLookup() {
   const name = fqdn.name;
   $("fqdn").value = name;
 
-  const resolver=RESOLVERS[$("resolver").value];
+  let resolver;
+  try {
+    resolver=getSelectedResolver();
+  } catch(e) {
+    showError("Error",e);
+    return;
+  }
   if(!resolver) {
     showError("Error", new Error("The DNS resolver setting is invalid."));
     return;
@@ -719,6 +760,8 @@ async function dnsLookup() {
 $("dnsCheck").onclick = dnsLookup;
 $("txtCheck").onclick = () => analyze($("txtInput").value, {source:TXT_RECORD_SOURCE});
 $("fqdn").addEventListener("keydown", e => { if(e.key==="Enter") dnsLookup(); });
+$("resolver").addEventListener("change", updateCustomDohVisibility);
+updateCustomDohVisibility();
 
 function runUrlFqdnLookup() {
   const fqdn = new URLSearchParams(window.location.search).get("fqdn");

@@ -26,7 +26,7 @@ describe("DNS-over-HTTPS transport", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await dohWireQuery(
-      "https://resolver.example/dns-query",
+      "https://resolver.example/dns-query?token=public-value&dns=old-value",
       "selector._domainkey.example.com",
       16
     );
@@ -37,7 +37,9 @@ describe("DNS-over-HTTPS transport", () => {
     const [requestUrl, options] = fetchMock.mock.calls[0];
     const url = new URL(requestUrl);
     expect(`${url.origin}${url.pathname}`).toBe("https://resolver.example/dns-query");
-    expect(url.searchParams.get("dns")).toBeTruthy();
+    expect(url.searchParams.get("token")).toBe("public-value");
+    expect(url.searchParams.get("dns")).not.toBe("old-value");
+    expect(url.searchParams.getAll("dns")).toHaveLength(1);
     expect(options).toEqual({
       headers: { "Accept": "application/dns-message" }
     });
