@@ -72,6 +72,45 @@ function hexColon(bytes,width=16) {
   return lines.join("\n");
 }
 
+function renderRawTxtChunks(chunks) {
+  const container = $("rawChunks");
+  container.replaceChildren();
+  $("rawChunkCount").textContent = `${chunks.length} ${chunks.length === 1 ? "string" : "strings"}`;
+
+  chunks.forEach((chunk, index) => {
+    const row = document.createElement("div");
+    row.className = "raw-chunk";
+
+    const header = document.createElement("div");
+    header.className = "raw-chunk-header";
+
+    const number = document.createElement("span");
+    number.className = "raw-chunk-number";
+    number.textContent = `#${index + 1}`;
+
+    const octets = new TextEncoder().encode(chunk).length;
+    const length = document.createElement("span");
+    length.className = "raw-chunk-length";
+    if (octets >= 255) length.classList.add(octets === 255 ? "at-limit" : "over-limit");
+    length.textContent = `${octets} / 255 octets`;
+
+    const value = document.createElement("code");
+    value.textContent = chunk || "(empty)";
+    if (chunk === "") value.className = "empty";
+
+    const meter = document.createElement("progress");
+    meter.className = "raw-chunk-meter";
+    if (octets >= 255) meter.classList.add(octets === 255 ? "at-limit" : "over-limit");
+    meter.max = 255;
+    meter.value = Math.min(octets, 255);
+    meter.setAttribute("aria-label", `Character-string ${index + 1}: ${octets} of 255 octets`);
+
+    header.append(number, length);
+    row.append(header, value, meter);
+    container.append(row);
+  });
+}
+
 function normalizeDnsName(name) {
   return name.replace(/\.$/, "").toLowerCase();
 }
@@ -339,7 +378,7 @@ function renderDnsLookupFailure(name, resolver, detail) {
   $("tagT").textContent = "—";
   $("unknownTags").textContent = "—";
   $("rawRecord").textContent = "";
-  $("rawChunks").textContent = "";
+  renderRawTxtChunks([]);
 
   setUnavailablePublicKeyDetails("Not evaluated");
   renderValidationChecks(checks);
@@ -458,9 +497,7 @@ async function analyze(record, meta={}) {
     }
     renderValidationChecks(checks);
     $("rawRecord").textContent = info.logical;
-    $("rawChunks").textContent = meta.rawChunks
-      ? meta.rawChunks.map((c,i)=>`[${i+1}] ${c}`).join("\n")
-      : info.chunks.map((c,i)=>`[${i+1}] ${c}`).join("\n");
+    renderRawTxtChunks(meta.rawChunks || info.chunks);
     $("result").classList.remove("hidden");
   } catch(e) {
     showError("Invalid", e);

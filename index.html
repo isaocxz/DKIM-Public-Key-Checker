@@ -10,7 +10,6 @@
 <div class="wrap">
   <div class="card">
     <h1>DKIM Public Key Checker</h1>
-    <p>This tool checks the DNS public key record used for DKIM verification.<br>It does not verify the DKIM signature itself.</p>
 
     <div class="mode-title">Choose a check method</div>
     <p class="mode-help">Fetch the record from DNS or paste a TXT record directly.</p>
@@ -86,9 +85,11 @@
 
     <div class="details-title">Details</div>
 
-    <div class="section">
-      <div class="detail-kicker">1. DNS / TXT Record</div>
-      <h3>DNS / TXT Record</h3>
+    <section class="detail-card">
+      <div class="detail-card-header">
+        <span class="detail-number">1</span>
+        <h3>DNS / TXT Record</h3>
+      </div>
       <div class="resolution-card">
         <div class="resolution-header">
           <span>DNS Resolution Path</span>
@@ -102,54 +103,79 @@
         <div class="label">TXT RRs</div><div id="txtRrs" class="value"></div>
         <div class="label">TXT character-strings</div><div id="txtChunks" class="value"></div>
         <div class="label">p= chunks</div><div id="pChunks" class="value"></div>
-        <div class="label">DNSSEC Status (Resolver AD Bit)</div><div id="dnssec" class="value"></div>
+        <div class="label">DNSSEC Status</div><div id="dnssec" class="value"></div>
       </div>
-      <h4>Raw TXT character-strings</h4>
-      <pre id="rawChunks"></pre>
+      <details class="detail-disclosure" open>
+        <summary class="raw-chunks-summary">
+          <span>Raw TXT character-strings</span>
+          <span id="rawChunkCount" class="raw-chunk-count"></span>
+        </summary>
+        <div id="rawChunks" class="raw-chunk-list"></div>
+      </details>
+    </section>
+
+    <div class="detail-card-grid">
+      <section class="detail-card">
+        <div class="detail-card-header">
+          <span class="detail-number">2</span>
+          <h3>DKIM Key Record</h3>
+        </div>
+        <div class="grid">
+          <div class="label">v (Version)</div><div id="tagV" class="value"></div>
+          <div class="label">k (Key type)</div><div id="tagK" class="value"></div>
+          <div class="label">p (Public key)</div><div id="tagP" class="value"></div>
+          <div class="label">s (Service type)</div><div id="tagS" class="value"></div>
+        </div>
+        <details class="detail-disclosure">
+          <summary>Additional tags</summary>
+          <div class="grid disclosure-grid">
+            <div class="label">h (Hash algorithms)</div><div id="tagH" class="value"></div>
+            <div class="label">n (Notes)</div><div id="tagN" class="value"></div>
+            <div class="label">t (Flags)</div><div id="tagT" class="value"></div>
+            <div class="label">Unknown tags</div><div id="unknownTags" class="value"></div>
+          </div>
+        </details>
+        <details class="detail-disclosure">
+          <summary>Joined DKIM Record</summary>
+          <pre id="rawRecord"></pre>
+        </details>
+      </section>
+
+      <section class="detail-card">
+        <div class="detail-card-header">
+          <span class="detail-number">3</span>
+          <h3>Public Key</h3>
+        </div>
+        <div class="grid">
+          <div class="label">Public Key</div><div id="valid" class="value"></div>
+          <div class="label">Algorithm</div><div id="algorithm" class="value"></div>
+          <div class="label">Format</div><div id="keyFormat" class="value"></div>
+          <div class="label">Key Length</div><div id="bits" class="value"></div>
+          <div class="label">Exponent</div><div id="exponent" class="value"></div>
+        </div>
+        <details class="detail-disclosure">
+          <summary>Modulus</summary>
+          <pre id="modulus"></pre>
+        </details>
+      </section>
     </div>
 
-    <div class="section">
-      <div class="detail-kicker">2. DKIM Key Record</div>
-      <h3>DKIM Key Record</h3>
-      <div class="grid">
-        <div class="label">v (Version)</div><div id="tagV" class="value"></div>
-        <div class="label">h (Hash algorithms)</div><div id="tagH" class="value"></div>
-        <div class="label">k (Key type)</div><div id="tagK" class="value"></div>
-        <div class="label">n (Notes)</div><div id="tagN" class="value"></div>
-        <div class="label">p (Public key)</div><div id="tagP" class="value"></div>
-        <div class="label">s (Service type)</div><div id="tagS" class="value"></div>
-        <div class="label">t (Flags)</div><div id="tagT" class="value"></div>
-        <div class="label">Unknown tags</div><div id="unknownTags" class="value"></div>
+    <details class="detail-card auxiliary-card">
+      <summary class="detail-card-header">
+        <span class="detail-number auxiliary">i</span>
+        <span class="detail-summary-title">DNS Auxiliary Information</span>
+        <span class="auxiliary-toggle" aria-hidden="true"></span>
+      </summary>
+      <div class="detail-card-body">
+        <div class="grid">
+          <div class="label">Zone</div><div id="soaZone" class="value"></div>
+          <div class="label">SOA MNAME</div><div id="soaMname" class="value"></div>
+          <div class="label">SOA Serial</div><div id="soaSerial" class="value"></div>
+          <div class="label">Negative TTL</div><div id="soaNegativeTtl" class="value"></div>
+        </div>
+        <p class="note">SOA information is provided for reference only and does not affect the Key Record Validation result.</p>
       </div>
-      <h4>Joined DKIM Record</h4>
-      <pre id="rawRecord"></pre>
-    </div>
-
-    <div class="section">
-      <div class="detail-kicker">3. Public Key</div>
-      <h3>Public Key</h3>
-      <div class="grid">
-        <div class="label">Format</div><div id="keyFormat" class="value"></div>
-        <div class="label">Public Key</div><div id="valid" class="value"></div>
-        <div class="label">Algorithm</div><div id="algorithm" class="value"></div>
-        <div class="label">Key Length</div><div id="bits" class="value"></div>
-        <div class="label">Exponent</div><div id="exponent" class="value"></div>
-      </div>
-      <h4>Modulus</h4>
-      <pre id="modulus"></pre>
-    </div>
-
-    <div class="section">
-      <div class="detail-kicker">Auxiliary</div>
-      <h3>DNS Auxiliary Information</h3>
-      <div class="grid">
-        <div class="label">Zone</div><div id="soaZone" class="value"></div>
-        <div class="label">SOA MNAME</div><div id="soaMname" class="value"></div>
-        <div class="label">SOA Serial</div><div id="soaSerial" class="value"></div>
-        <div class="label">Negative TTL</div><div id="soaNegativeTtl" class="value"></div>
-      </div>
-      <p class="note">SOA information is provided for reference only and does not affect the Key Record Validation result.</p>
-    </div>
+    </details>
   </div>
 
   <div id="errbox" class="card hidden"><div id="error" class="error"></div></div>
