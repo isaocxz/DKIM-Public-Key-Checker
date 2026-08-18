@@ -2,9 +2,11 @@ import { describe, expect, test } from "vitest";
 
 import {
   addRfc6376Checks,
+  countPChunks,
   decodeBase64Strict,
   extractP,
   formatKeyTypeTag,
+  hasDkimPublicKeyTag,
   inspectEd25519PublicKey,
   parseTags,
   validateQpSection,
@@ -37,6 +39,16 @@ describe("DKIM tag parsing", () => {
 
     expect(result.state).toBe("missing");
     expect(result.info.tags.P).toBe("AAAA");
+  });
+
+  test("does not treat uppercase P= as the DKIM public-key tag", () => {
+    expect(hasDkimPublicKeyTag("v=DKIM1; P=AAAA")).toBe(false);
+    expect(hasDkimPublicKeyTag("v=DKIM1; p=AAAA")).toBe(true);
+  });
+
+  test("does not count uppercase P= as a p= character-string", () => {
+    expect(countPChunks(["v=DKIM1; P=AAAA"])).toBe(0);
+    expect(countPChunks(["v=DKIM1; p=AAAA"])).toBe(1);
   });
 
   test("rejects a tag name beginning with a digit", () => {

@@ -4,6 +4,7 @@ import {
   KNOWN_DKIM_TAGS,
   countPChunks,
   formatKeyTypeTag,
+  hasDkimPublicKeyTag,
   validation,
   validationOverall
 } from "./dkim-validation.js";
@@ -612,7 +613,7 @@ async function dnsLookup() {
      * RR so malformed/missing-p records can still be fully validated.
      */
     const selected =
-      finalAnswers.find(a=>/(?:^|;)\s*p\s*=/i.test(a.logical))
+      finalAnswers.find(answer => hasDkimPublicKeyTag(answer.logical))
       || finalAnswers[0];
 
     // Re-create quoted presentation solely for the common analysis path;

@@ -25,7 +25,7 @@ function countPChunks(chunks) {
   for (const chunk of chunks) {
     let part = chunk;
     if (!started) {
-      const match = part.match(/(?:^|;)\s*p\s*=\s*(.*)$/i);
+      const match = part.match(/(?:^|;)\s*p\s*=\s*(.*)$/);
       if (!match) continue;
       started = true;
       part = match[1];
@@ -107,6 +107,10 @@ function extractP(record) {
   }
 
   return {state:"present", p, info};
+}
+
+function hasDkimPublicKeyTag(record) {
+  return parseTags(record).tags.p !== undefined;
 }
 
 function decodeBase64Strict(base64) {
@@ -380,6 +384,7 @@ export {
   decodeBase64Strict,
   extractP,
   formatKeyTypeTag,
+  hasDkimPublicKeyTag,
   inspectEd25519PublicKey,
   inspectRsaPublicKey,
   parseTags,
