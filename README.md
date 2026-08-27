@@ -1,5 +1,7 @@
 # DKIM Public Key Checker
 
+**Live tool:** [https://isaocxz.github.io/DKIM-Public-Key-Checker/](https://isaocxz.github.io/DKIM-Public-Key-Checker/)
+
 A browser-based tool for inspecting and validating DKIM DNS public-key records.
 
 Unlike many DKIM lookup tools that mainly answer **“Is this record valid?”**, this checker also shows **why** by exposing the DNS, DKIM, and public-key validation stages.
