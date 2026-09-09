@@ -163,6 +163,18 @@ RFC 6376 tags checked by the tool:
 
 Additional checks include tag-list syntax, duplicate tags, `v=` position, missing `p=`, revoked key (`p=` empty), and unknown extension tags.
 
+### Deprecated `g=` Tag
+
+RFC 4871 defined `g=` as an optional restriction on the signing identity's local-part.
+RFC 6376 removed that restriction mechanism, deprecated `g=`, and requires
+verifiers to ignore it.
+
+The checker reports `g=*` as informational because ignoring it does not remove an
+identity restriction. If `g=` contains any other value, the checker reports a
+warning: a current verifier ignores the tag, so the identity restriction intended
+by the record publisher is not enforced. The record is not rejected solely because
+`g=` is present.
+
 ### Key-Type Dispatch
 
 After validating the DKIM tags and checking that `p=` contains a public key,

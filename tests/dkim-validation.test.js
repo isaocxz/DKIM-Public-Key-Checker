@@ -87,9 +87,19 @@ describe("RFC 6376 validation", () => {
     });
     expect(checkResult(checks, "Deprecated tags")).toMatchObject({
       status:"info",
-      detail:"g (ignored)"
+      detail:"g=* is deprecated and ignored"
     });
     expect(checkResult(checks, "Unknown tags").detail).toBe("None");
+  });
+
+  test("warns when deprecated g= attempts to restrict identities", () => {
+    const checks = rfcChecks("v=DKIM1; g=user*; p=AAAA");
+
+    expect(checkResult(checks, "Deprecated tags")).toMatchObject({
+      status:"warn",
+      detail:"g=user* is deprecated and ignored; the intended identity restriction is not enforced"
+    });
+    expect(validationOverall(checks)).toBe("PASS (Warnings)");
   });
 
   test("keeps uppercase G= as an unknown case-sensitive tag", () => {

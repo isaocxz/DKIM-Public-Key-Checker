@@ -322,9 +322,15 @@ function addRfc6376Checks(checks, info) {
   }
 
   // RFC 6376 Appendix C.2 deprecates the former g= tag and requires it to be ignored.
-  checks.push(deprecated.length
-    ? validation("info","Deprecated tags",`${deprecated.join(", ")} (ignored)`)
-    : validation("info","Deprecated tags","None"));
+  if (deprecated.length) {
+    const gValue = info.tags.g;
+    checks.push(gValue === "*"
+      ? validation("info","Deprecated tags","g=* is deprecated and ignored")
+      : validation("warn","Deprecated tags",
+          `g=${gValue} is deprecated and ignored; the intended identity restriction is not enforced`));
+  } else {
+    checks.push(validation("info","Deprecated tags","None"));
+  }
 
   // RFC 6376 allows extension tags; implementations that do not understand them MUST ignore them.
   checks.push(unknown.length
