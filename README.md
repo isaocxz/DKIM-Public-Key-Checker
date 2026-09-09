@@ -28,7 +28,7 @@ DNS Lookup mode                         TXT Record mode
 | Area | Checks / information |
 | --- | --- |
 | DNS | CNAME chain, final TXT owner, TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
-| DKIM | RFC 6376 tags, duplicates, defaults, unknown tags, revoked `p=` |
+| DKIM | RFC 6376 tags, duplicates, defaults, deprecated `g=`, unknown tags, revoked `p=` |
 | Public key | Base64, RSA SPKI/structure/modulus/exponent, Ed25519 32-byte encoding |
 | Security | RSA key length based on RFC 8301 |
 | Operation | DNS Lookup mode or offline TXT Record mode |

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   addRfc6376Checks,
+  classifyDkimTags,
   countPChunks,
   decodeBase64Strict,
   extractP,
@@ -77,6 +78,27 @@ describe("DKIM tag parsing", () => {
 });
 
 describe("RFC 6376 validation", () => {
+  test("reports lowercase g= as deprecated instead of unknown", () => {
+    const checks = rfcChecks("v=DKIM1; g=*; p=AAAA");
+
+    expect(classifyDkimTags({v:"DKIM1", g:"*", p:"AAAA"})).toEqual({
+      deprecated:["g"],
+      unknown:[]
+    });
+    expect(checkResult(checks, "Deprecated tags")).toMatchObject({
+      status:"info",
+      detail:"g (ignored)"
+    });
+    expect(checkResult(checks, "Unknown tags").detail).toBe("None");
+  });
+
+  test("keeps uppercase G= as an unknown case-sensitive tag", () => {
+    const checks = rfcChecks("v=DKIM1; G=*; p=AAAA");
+
+    expect(checkResult(checks, "Deprecated tags").detail).toBe("None");
+    expect(checkResult(checks, "Unknown tags").detail).toBe("G (ignored)");
+  });
+
   test("rejects an explicitly empty k= value", () => {
     const result = checkResult(rfcChecks("v=DKIM1; k=; p=AAAA"), "Key type");
 

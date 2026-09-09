@@ -1,7 +1,7 @@
 "use strict";
 
 import {
-  KNOWN_DKIM_TAGS,
+  classifyDkimTags,
   countPChunks,
   formatKeyTypeTag,
   hasDkimPublicKeyTag,
@@ -227,6 +227,7 @@ const VALIDATION_DESCRIPTIONS = {
   "p= public key":"Checks whether p= contains a key or is revoked.",
   "s= service type":"Checks permitted service types.",
   "t= flags":"Checks DKIM key flags.",
+  "Deprecated tags":"Reports obsolete DKIM tags that RFC 6376 requires verifiers to ignore.",
   "Unknown tags":"Reports unrecognized extension tags; they are ignored.",
   "DKIM Key Record":"DKIM key-record checks were not performed.",
   "Base64":"Checks whether p= is valid Base64.",
@@ -376,6 +377,7 @@ function renderDnsLookupFailure(name, resolver, detail) {
   $("tagP").textContent = "—";
   $("tagS").textContent = "—";
   $("tagT").textContent = "—";
+  $("deprecatedTags").textContent = "—";
   $("unknownTags").textContent = "—";
   $("rawRecord").textContent = "";
   renderRawTxtChunks([]);
@@ -467,10 +469,13 @@ async function analyze(record, meta={}) {
       `${pValue.length} Base64 characters`;
     $("tagS").textContent = info.tags.s || "* (default)";
     $("tagT").textContent = info.tags.t || "(none)";
-    const unknown = Object.entries(info.tags)
-      .filter(([name]) => !KNOWN_DKIM_TAGS.has(name))
-      .map(([name,value]) => `${name}=${value}`);
-    $("unknownTags").textContent = unknown.length ? unknown.join("; ") : "(none)";
+    const {deprecated, unknown} = classifyDkimTags(info.tags);
+    const deprecatedValues = deprecated.map(name => `${name}=${info.tags[name]} (ignored)`);
+    const unknownValues = unknown.map(name => `${name}=${info.tags[name]}`);
+    $("deprecatedTags").textContent = deprecatedValues.length
+      ? deprecatedValues.join("; ")
+      : "(none)";
+    $("unknownTags").textContent = unknownValues.length ? unknownValues.join("; ") : "(none)";
     if (pState === "present" && keyType === "ed25519") {
       setUnavailablePublicKeyDetails(ed25519Ok ? "Valid encoding and length" : "Invalid");
       $("keyFormat").textContent = "Raw Ed25519 public key";

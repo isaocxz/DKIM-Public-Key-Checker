@@ -1,4 +1,5 @@
 const KNOWN_DKIM_TAGS = new Set(["v","h","k","n","p","s","t"]);
+const DEPRECATED_DKIM_TAGS = new Set(["g"]);
 const DKIM_TAG_NAME_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
 const HYPHENATED_WORD_RE = /^[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
 
@@ -211,12 +212,21 @@ function formatKeyTypeTag(value) {
   return value;
 }
 
+function classifyDkimTags(tags) {
+  const names = Object.keys(tags);
+  return {
+    deprecated: names.filter(name => DEPRECATED_DKIM_TAGS.has(name)),
+    unknown: names.filter(name =>
+      !KNOWN_DKIM_TAGS.has(name) && !DEPRECATED_DKIM_TAGS.has(name))
+  };
+}
+
 /* Focused RFC 6376 Section 3.2 and Section 3.6.1 checks. */
 function addRfc6376Checks(checks, info) {
   const startIndex = checks.length;
   const first = info.fields.find(field => field.name);
   const malformed = info.fields.filter(field => field.malformed);
-  const unknown = Object.keys(info.tags).filter(tag => !KNOWN_DKIM_TAGS.has(tag));
+  const {deprecated, unknown} = classifyDkimTags(info.tags);
 
   checks.push(malformed.length
     ? validation("fail","RFC tag-list syntax",
@@ -311,6 +321,11 @@ function addRfc6376Checks(checks, info) {
     checks.push(validation("info","Selector flags","t= omitted; no flags set"));
   }
 
+  // RFC 6376 Appendix C.2 deprecates the former g= tag and requires it to be ignored.
+  checks.push(deprecated.length
+    ? validation("info","Deprecated tags",`${deprecated.join(", ")} (ignored)`)
+    : validation("info","Deprecated tags","None"));
+
   // RFC 6376 allows extension tags; implementations that do not understand them MUST ignore them.
   checks.push(unknown.length
     ? validation("info","Unknown tags",`${unknown.join(", ")} (ignored)`)
@@ -380,6 +395,7 @@ function inspectEd25519PublicKey(pValue) {
 export {
   KNOWN_DKIM_TAGS,
   addRfc6376Checks,
+  classifyDkimTags,
   countPChunks,
   decodeBase64Strict,
   extractP,
