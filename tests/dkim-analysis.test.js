@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { buildValidationResult } from "../dkim-analysis.js";
+import { buildValidationResult } from "../js/dkim-analysis.js";
 
 const VALID_ED25519_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 

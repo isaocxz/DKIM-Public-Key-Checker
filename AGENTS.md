@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository contains a client-side DKIM public-key checker. The application uses `index.html`, `styles.css`, `app.js`, and browser-native JavaScript modules. It runs entirely in the browser with no build step or runtime package dependencies. npm and Vitest are used only for development-time logic tests.
+This repository contains a client-side DKIM public-key checker. The application uses `index.html`, `styles.css`, JavaScript modules under `js/`, and browser-native APIs. It runs entirely in the browser with no build step or runtime package dependencies. npm and Vitest are used only for development-time logic tests.
 
 ## Working rules
 

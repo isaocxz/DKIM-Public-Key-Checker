@@ -303,15 +303,16 @@ When a selector is an alias, the checker processes the CNAME chain and final TXT
 ```text
 index.html   → Page structure
 styles.css  → Presentation
-app.js      → UI and lookup orchestration
-               │
-               ├─ doh-transport.js → RFC 8484 HTTP transport / Fetch API
-               ├─ dns-wire.js      → DNS query encoding and response parsing
-               │     └─ Uint8Array / DataView → DNS wire format
-               ├─ dkim-fqdn.js     → DKIM DNS name validation
-               └─ dkim-validation.js
-                    ├─ Web Crypto API → SPKI / RSA
-                    └─ Base64 decoder → Ed25519 raw-key length
+js/
+ ├─ app.js              → UI and lookup orchestration
+ ├─ dkim-analysis.js    → Validation result model
+ ├─ dkim-fqdn.js        → DKIM DNS name validation
+ ├─ dkim-validation.js  → DKIM and public-key validation
+ │    ├─ Web Crypto API → SPKI / RSA
+ │    └─ Base64 decoder → Ed25519 raw-key length
+ ├─ dns-wire.js         → DNS query encoding and response parsing
+ │    └─ Uint8Array / DataView → DNS wire format
+ └─ doh-transport.js    → RFC 8484 HTTP transport / Fetch API
 ```
 
 **No external JavaScript libraries or frameworks are used at runtime.** Vitest

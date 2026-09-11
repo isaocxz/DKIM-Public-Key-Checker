@@ -12,7 +12,7 @@ import {
   parseTags,
   validateQpSection,
   validationOverall
-} from "../dkim-validation.js";
+} from "../js/dkim-validation.js";
 
 const VALID_ED25519_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 

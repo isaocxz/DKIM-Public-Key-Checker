@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { dohWireQuery } from "../doh-transport.js";
+import { dohWireQuery } from "../js/doh-transport.js";
 
 function useFixedTransactionId(id) {
   vi.stubGlobal("crypto", {

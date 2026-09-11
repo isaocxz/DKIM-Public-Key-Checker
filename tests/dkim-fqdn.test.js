@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { validateDkimFqdn } from "../dkim-fqdn.js";
+import { validateDkimFqdn } from "../js/dkim-fqdn.js";
 
 describe("DKIM FQDN validation", () => {
   test("accepts a complete DKIM DNS name", () => {

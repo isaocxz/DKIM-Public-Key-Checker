@@ -4,7 +4,7 @@ import {
   buildDnsQuery,
   parseDnsSoaMessage,
   parseDnsTxtMessage
-} from "../dns-wire.js";
+} from "../js/dns-wire.js";
 
 const encoder = new TextEncoder();
 
