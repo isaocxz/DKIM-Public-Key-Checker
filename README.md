@@ -382,3 +382,7 @@ repository over localhost and run those cases in DNS Lookup mode.
 - RFC 8463 — A New Cryptographic Signature Method for DKIM
 - RFC 8484 — DNS Queries over HTTPS (DoH)
 - RFC 6891 — Extension Mechanisms for DNS (EDNS(0))
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

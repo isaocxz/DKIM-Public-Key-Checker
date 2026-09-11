@@ -1,6 +1,7 @@
 {
   "name": "dkim-public-key-checker",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "test": "vitest run",
