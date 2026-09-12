@@ -168,8 +168,10 @@ Additional checks include tag-list syntax, duplicate tags, `v=` position, missin
 The optional `h=` tag restricts the hash algorithms that signatures may use
 with the key. The tag allows all algorithms when omitted. `sha256` identifies
 SHA-256. `sha1` is retained as a historic registry value but is prohibited for
-DKIM signing and verification by RFC 8301. Unrecognized algorithms are
-ignored as extension values.
+DKIM signing and verification by RFC 8301. A record restricted to `sha1`
+fails validation. A record containing both `sha1` and `sha256` passes with a
+warning because SHA-256 remains usable. Unrecognized algorithms are ignored
+as extension values.
 
 ### Service Types (`s=`)
 

@@ -137,9 +137,22 @@ describe("RFC 6376 validation", () => {
   test("identifies h=sha1 as historic and prohibited", () => {
     const result = checkResult(rfcChecks("v=DKIM1; h=sha1; p=AAAA"), "Hash algorithms");
 
-    expect(result.detail).toBe(
-      "h=sha1; sha1: SHA-1 (historic; prohibited by RFC 8301)"
+    expect(result).toMatchObject({
+      status:"fail",
+      detail:"h=sha1; sha1: SHA-1 (historic; prohibited by RFC 8301)"
+    });
+  });
+
+  test("warns when h= includes both sha1 and sha256", () => {
+    const result = checkResult(
+      rfcChecks("v=DKIM1; h=sha1:sha256; p=AAAA"),
+      "Hash algorithms"
     );
+
+    expect(result).toMatchObject({
+      status:"warn",
+      detail:"h=sha1:sha256; sha1: SHA-1 (historic; prohibited by RFC 8301); sha256: SHA-256"
+    });
   });
 
   test("keeps an unrecognized h= extension visible and ignored", () => {

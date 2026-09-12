@@ -280,13 +280,22 @@ function addRfc6376Checks(checks, info) {
   // h= is OPTIONAL. Empty h= is invalid because the grammar requires at least one algorithm.
   if (info.tags.h !== undefined) {
     const {values, empty, invalid} = parseColonTokenList(info.tags.h);
+    const includesSha1 = values.includes("sha1");
+    const includesSha256 = values.includes("sha256");
+    let status = "pass";
+    if (includesSha1) {
+      status = includesSha256 ? "warn" : "fail";
+    }
     checks.push(empty
       ? validation("fail","Hash algorithms",
           info.tags.h === "" ? "h= is present but empty" : "h= contains an empty list item")
       : invalid.length
         ? validation("fail","Hash algorithms",`Invalid token(s): ${invalid.join(", ")}`)
-        : validation("pass","Hash algorithms",
-            `h=${values.join(":")}; ${describeHashAlgorithms(values)}`));
+        : validation(
+            status,
+            "Hash algorithms",
+            `h=${values.join(":")}; ${describeHashAlgorithms(values)}`
+          ));
   } else {
     checks.push(validation("info","Hash algorithms","h= omitted; all algorithms are allowed by the record"));
   }
