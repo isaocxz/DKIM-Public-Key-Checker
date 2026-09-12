@@ -163,6 +163,14 @@ RFC 6376 tags checked by the tool:
 
 Additional checks include tag-list syntax, duplicate tags, `v=` position, missing `p=`, revoked key (`p=` empty), and unknown extension tags.
 
+### Service Types (`s=`)
+
+The optional `s=` tag lists the services for which the key can be used. The
+`email` value means electronic mail, and `*` means all service types. The tag
+defaults to `*` when omitted. A verifier ignores the record when its service
+type is not listed, and ignores individual service values it does not
+recognize.
+
 ### Selector Flags (`t=`)
 
 The optional `t=` tag modifies how a verifier interprets the selector. The

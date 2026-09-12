@@ -181,6 +181,15 @@ function describeSelectorFlags(values) {
   return descriptions.join("; ");
 }
 
+function describeServiceTypes(values) {
+  const descriptions = values.map(value => {
+    if (value === "*") return "*: all service types";
+    if (value === "email") return "email: electronic mail";
+    return `${value}: unrecognized service type (ignored)`;
+  });
+  return descriptions.join("; ");
+}
+
 /*
  * RFC 6376 Section 3.6.1 defines n= as RFC 2045 qp-section. A quoted
  * octet is "=" followed by exactly two uppercase hexadecimal digits.
@@ -311,10 +320,13 @@ function addRfc6376Checks(checks, info) {
       : invalid.length
         ? validation("fail","Service type",`Invalid token(s): ${invalid.join(", ")}`)
         : email
-          ? validation("pass","Service type",`s=${values.join(":")}; applies to email`)
-          : validation("fail","Service type",`s=${values.join(":")}; does not apply to email`));
+          ? validation("pass","Service type",
+              `s=${values.join(":")}; ${describeServiceTypes(values)}; applies to email`)
+          : validation("fail","Service type",
+              `s=${values.join(":")}; ${describeServiceTypes(values)}; does not apply to email`));
   } else {
-    checks.push(validation("pass","Service type","s= omitted; default is *"));
+    checks.push(validation("pass","Service type",
+      "s= omitted; default is * (all service types, including email)"));
   }
 
   // t= is OPTIONAL. Empty t= is invalid because the grammar requires at least one flag.

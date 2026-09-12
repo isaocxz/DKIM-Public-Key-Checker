@@ -125,6 +125,41 @@ describe("RFC 6376 validation", () => {
     expect(result.status).toBe("pass");
   });
 
+  test("explains the s=* service type", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; s=*; p=AAAA"), "Service type");
+
+    expect(result).toMatchObject({
+      status:"pass",
+      detail:"s=*; *: all service types; applies to email"
+    });
+  });
+
+  test("explains the s=email service type", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; s=email; p=AAAA"), "Service type");
+
+    expect(result).toMatchObject({
+      status:"pass",
+      detail:"s=email; email: electronic mail; applies to email"
+    });
+  });
+
+  test("keeps an unrecognized s= extension visible and ignored", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; s=email:future; p=AAAA"), "Service type");
+
+    expect(result).toMatchObject({
+      status:"pass",
+      detail:"s=email:future; email: electronic mail; future: unrecognized service type (ignored); applies to email"
+    });
+  });
+
+  test("explains the default s= service type", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; p=AAAA"), "Service type");
+
+    expect(result.detail).toBe(
+      "s= omitted; default is * (all service types, including email)"
+    );
+  });
+
   test("explains the t=y testing flag", () => {
     const result = checkResult(rfcChecks("v=DKIM1; t=y; p=AAAA"), "Selector flags");
 
