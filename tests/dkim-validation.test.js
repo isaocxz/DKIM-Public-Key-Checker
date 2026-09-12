@@ -125,6 +125,38 @@ describe("RFC 6376 validation", () => {
     expect(result.status).toBe("pass");
   });
 
+  test("explains the t=y testing flag", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; t=y; p=AAAA"), "Selector flags");
+
+    expect(result).toMatchObject({
+      status:"info",
+      detail:"t=y; y: testing mode"
+    });
+  });
+
+  test("explains the t=s strict AUID flag", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; t=s; p=AAAA"), "Selector flags");
+
+    expect(result.detail).toBe("t=s; s: AUID (i=) domain must exactly match SDID (d=)");
+  });
+
+  test("explains multiple t= flags", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; t=y:s; p=AAAA"), "Selector flags");
+
+    expect(result.detail).toBe(
+      "t=y:s; y: testing mode; s: AUID (i=) domain must exactly match SDID (d=)"
+    );
+  });
+
+  test("keeps an unrecognized t= extension flag visible and ignored", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; t=future; p=AAAA"), "Selector flags");
+
+    expect(result).toMatchObject({
+      status:"info",
+      detail:"t=future; future: unrecognized flag (ignored)"
+    });
+  });
+
   test("rejects lowercase hexadecimal in an n= escape", () => {
     const result = checkResult(
       rfcChecks("v=DKIM1; n=invalid=2f; p=AAAA"),

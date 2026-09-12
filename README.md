@@ -163,6 +163,15 @@ RFC 6376 tags checked by the tool:
 
 Additional checks include tag-list syntax, duplicate tags, `v=` position, missing `p=`, revoked key (`p=` empty), and unknown extension tags.
 
+### Selector Flags (`t=`)
+
+The optional `t=` tag modifies how a verifier interprets the selector. The
+`y` flag indicates that the domain is testing DKIM. The `s` flag requires the
+domain in the signature's AUID (`i=`) to exactly match the signing domain
+identifier (`d=`), rather than allowing a subdomain. Multiple flags are
+separated by colons, for example `t=y:s`. Unrecognized flags are ignored as
+required by RFC 6376.
+
 ### Deprecated `g=` Tag
 
 RFC 4871 defined `g=` as an optional restriction on the signing identity's local-part.

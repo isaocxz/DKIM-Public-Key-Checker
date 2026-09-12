@@ -172,6 +172,15 @@ function parseColonTokenList(value, {allowAsterisk=false}={}) {
   return {values, empty, invalid};
 }
 
+function describeSelectorFlags(values) {
+  const descriptions = values.map(value => {
+    if (value === "y") return "y: testing mode";
+    if (value === "s") return "s: AUID (i=) domain must exactly match SDID (d=)";
+    return `${value}: unrecognized flag (ignored)`;
+  });
+  return descriptions.join("; ");
+}
+
 /*
  * RFC 6376 Section 3.6.1 defines n= as RFC 2045 qp-section. A quoted
  * octet is "=" followed by exactly two uppercase hexadecimal digits.
@@ -316,7 +325,8 @@ function addRfc6376Checks(checks, info) {
           info.tags.t === "" ? "t= is present but empty" : "t= contains an empty list item")
       : invalid.length
         ? validation("fail","Selector flags",`Invalid token(s): ${invalid.join(", ")}`)
-        : validation("info","Selector flags",`t=${values.join(":")}`));
+        : validation("info","Selector flags",
+            `t=${values.join(":")}; ${describeSelectorFlags(values)}`));
   } else {
     checks.push(validation("info","Selector flags","t= omitted; no flags set"));
   }
