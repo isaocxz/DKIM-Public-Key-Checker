@@ -163,6 +163,14 @@ RFC 6376 tags checked by the tool:
 
 Additional checks include tag-list syntax, duplicate tags, `v=` position, missing `p=`, revoked key (`p=` empty), and unknown extension tags.
 
+### Hash Algorithms (`h=`)
+
+The optional `h=` tag restricts the hash algorithms that signatures may use
+with the key. The tag allows all algorithms when omitted. `sha256` identifies
+SHA-256. `sha1` is retained as a historic registry value but is prohibited for
+DKIM signing and verification by RFC 8301. Unrecognized algorithms are
+ignored as extension values.
+
 ### Service Types (`s=`)
 
 The optional `s=` tag lists the services for which the key can be used. The

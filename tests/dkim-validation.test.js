@@ -125,6 +125,32 @@ describe("RFC 6376 validation", () => {
     expect(result.status).toBe("pass");
   });
 
+  test("explains the h=sha256 hash algorithm", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; h=sha256; p=AAAA"), "Hash algorithms");
+
+    expect(result).toMatchObject({
+      status:"pass",
+      detail:"h=sha256; sha256: SHA-256"
+    });
+  });
+
+  test("identifies h=sha1 as historic and prohibited", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; h=sha1; p=AAAA"), "Hash algorithms");
+
+    expect(result.detail).toBe(
+      "h=sha1; sha1: SHA-1 (historic; prohibited by RFC 8301)"
+    );
+  });
+
+  test("keeps an unrecognized h= extension visible and ignored", () => {
+    const result = checkResult(rfcChecks("v=DKIM1; h=sha256:future; p=AAAA"), "Hash algorithms");
+
+    expect(result).toMatchObject({
+      status:"pass",
+      detail:"h=sha256:future; sha256: SHA-256; future: unrecognized algorithm (ignored)"
+    });
+  });
+
   test("explains the s=* service type", () => {
     const result = checkResult(rfcChecks("v=DKIM1; s=*; p=AAAA"), "Service type");
 

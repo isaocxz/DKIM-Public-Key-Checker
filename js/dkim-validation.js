@@ -190,6 +190,15 @@ function describeServiceTypes(values) {
   return descriptions.join("; ");
 }
 
+function describeHashAlgorithms(values) {
+  const descriptions = values.map(value => {
+    if (value === "sha256") return "sha256: SHA-256";
+    if (value === "sha1") return "sha1: SHA-1 (historic; prohibited by RFC 8301)";
+    return `${value}: unrecognized algorithm (ignored)`;
+  });
+  return descriptions.join("; ");
+}
+
 /*
  * RFC 6376 Section 3.6.1 defines n= as RFC 2045 qp-section. A quoted
  * octet is "=" followed by exactly two uppercase hexadecimal digits.
@@ -276,7 +285,8 @@ function addRfc6376Checks(checks, info) {
           info.tags.h === "" ? "h= is present but empty" : "h= contains an empty list item")
       : invalid.length
         ? validation("fail","Hash algorithms",`Invalid token(s): ${invalid.join(", ")}`)
-        : validation("pass","Hash algorithms",`h=${values.join(":")}`));
+        : validation("pass","Hash algorithms",
+            `h=${values.join(":")}; ${describeHashAlgorithms(values)}`));
   } else {
     checks.push(validation("info","Hash algorithms","h= omitted; all algorithms are allowed by the record"));
   }
