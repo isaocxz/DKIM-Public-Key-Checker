@@ -10,6 +10,7 @@ import {
   hasDkimPublicKeyTag,
   inspectEd25519PublicKey,
   parseTags,
+  sha256Fingerprint,
   validateQpSection,
   validationOverall
 } from "../js/dkim-validation.js";
@@ -287,6 +288,12 @@ describe("public-key encoding", () => {
     expect(result.base64Ok).toBe(true);
     expect(result.ed25519Ok).toBe(false);
     expect(result.byteLength).toBe(1);
+  });
+
+  test("formats the SHA-256 fingerprint of decoded p= bytes", async () => {
+    await expect(sha256Fingerprint(new Uint8Array([0]))).resolves.toBe(
+      "6E:34:0B:9C:FF:B3:7A:98:9C:A5:44:E6:BB:78:0A:2C:78:90:1D:3F:B3:37:38:76:85:11:A3:06:17:AF:A0:1D"
+    );
   });
 });
 

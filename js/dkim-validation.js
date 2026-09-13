@@ -385,7 +385,7 @@ function addRfc6376Checks(checks, info) {
 async function inspectRsaPublicKey(pValue) {
   const decoded = decodeBase64Strict(pValue);
   if (!decoded.ok) {
-    return {base64Ok:false, spkiOk:false, error:decoded.error};
+    return {base64Ok:false, spkiOk:false, decodedBytes:null, error:decoded.error};
   }
 
   try {
@@ -400,6 +400,7 @@ async function inspectRsaPublicKey(pValue) {
       return {
         base64Ok:true,
         spkiOk:false,
+        decodedBytes:decoded.bytes,
         error:"The public key is not a valid RSA public key."
       };
     }
@@ -407,6 +408,7 @@ async function inspectRsaPublicKey(pValue) {
     return {
       base64Ok:true,
       spkiOk:true,
+      decodedBytes:decoded.bytes,
       error:"",
       exponent:bytesToBigInt(base64UrlToBytes(jwk.e)),
       bitLength:key.algorithm.modulusLength,
@@ -416,6 +418,7 @@ async function inspectRsaPublicKey(pValue) {
     return {
       base64Ok:true,
       spkiOk:false,
+      decodedBytes:decoded.bytes,
       error:error?.message || "The p= value is not a valid SPKI RSA public key."
     };
   }
@@ -425,18 +428,32 @@ async function inspectRsaPublicKey(pValue) {
 function inspectEd25519PublicKey(pValue) {
   const decoded = decodeBase64Strict(pValue);
   if (!decoded.ok) {
-    return {base64Ok:false, ed25519Ok:false, byteLength:null, error:decoded.error};
+    return {
+      base64Ok:false,
+      ed25519Ok:false,
+      decodedBytes:null,
+      byteLength:null,
+      error:decoded.error
+    };
   }
 
   const byteLength = decoded.bytes.length;
   return {
     base64Ok:true,
     ed25519Ok:byteLength === 32,
+    decodedBytes:decoded.bytes,
     byteLength,
     error:byteLength === 32
       ? ""
       : `The Ed25519 public key is ${byteLength} bytes; RFC 8463 requires 32 bytes.`
   };
+}
+
+async function sha256Fingerprint(bytes) {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return [...digest]
+    .map(byte => byte.toString(16).padStart(2, "0").toUpperCase())
+    .join(":");
 }
 
 export {
@@ -451,6 +468,7 @@ export {
   inspectEd25519PublicKey,
   inspectRsaPublicKey,
   parseTags,
+  sha256Fingerprint,
   validateQpSection,
   validation,
   validationOverall

@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import { buildValidationResult } from "../js/dkim-analysis.js";
 
 const VALID_ED25519_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+const ZERO_ED25519_FINGERPRINT =
+  "66:68:7A:AD:F8:62:BD:77:6C:8F:C1:8B:8E:9F:8E:20:08:97:14:85:6E:E2:33:B3:90:2A:59:1D:0D:5F:29:25";
 
 function checkResult(result, name) {
   return result.checks.find(check => check.check === name);
@@ -16,6 +18,7 @@ describe("DKIM validation result model", () => {
 
     expect(result.overall).toBe("PASS");
     expect(result.keyType).toBe("ed25519");
+    expect(result.keyInspection.fingerprint).toBe(ZERO_ED25519_FINGERPRINT);
     expect(checkResult(result, "Ed25519 public key")).toMatchObject({
       status: "pass",
       detail: "32 bytes (256 bit)"
@@ -27,6 +30,7 @@ describe("DKIM validation result model", () => {
 
     expect(result.overall).toBe("FAIL");
     expect(result.pState).toBe("revoked");
+    expect(result.keyInspection.fingerprint).toBeNull();
     expect(checkResult(result, "p= public key").detail).toBe("Revoked: p= is empty");
   });
 

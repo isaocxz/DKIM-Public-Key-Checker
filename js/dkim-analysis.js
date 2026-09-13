@@ -5,6 +5,7 @@ import {
   extractP,
   inspectEd25519PublicKey,
   inspectRsaPublicKey,
+  sha256Fingerprint,
   validation,
   validationOverall
 } from "./dkim-validation.js";
@@ -32,6 +33,8 @@ async function buildValidationResult(record, meta = {}) {
     exponent: null,
     bitLength: null,
     modulusBytes: null,
+    decodedBytes: null,
+    fingerprint: null,
     byteLength: null
   };
 
@@ -39,6 +42,10 @@ async function buildValidationResult(record, meta = {}) {
     keyInspection = await inspectRsaPublicKey(pValue);
   } else if (pState === "present" && keyType === "ed25519") {
     keyInspection = inspectEd25519PublicKey(pValue);
+  }
+
+  if (keyInspection.base64Ok && keyInspection.decodedBytes) {
+    keyInspection.fingerprint = await sha256Fingerprint(keyInspection.decodedBytes);
   }
 
   const {

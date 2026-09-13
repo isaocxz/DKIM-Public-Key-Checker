@@ -47,6 +47,7 @@ DNS Lookup mode                         TXT Record mode
 | Detailed RFC 6376 tag validation | Varies | ✓ |
 | Base64 / SPKI / RSA checks shown separately | Usually hidden | ✓ |
 | Modulus / exponent inspection | Varies | ✓ |
+| SHA-256 public-key fingerprint | Varies | ✓ |
 | Multiple TXT RR detection | Varies | ✓ |
 | TXT `character-string` structure | Usually hidden | ✓ |
 | DNSSEC resolver status | Usually not shown | ✓ |
@@ -231,6 +232,14 @@ the checker selects the public-key validation path from `k=`.
 
 Omitting `k=` selects `rsa`, as specified by RFC 6376. An empty or unsupported
 key type fails validation.
+
+### Public-Key Fingerprint
+
+When `p=` contains valid Base64, the checker displays a SHA-256 fingerprint of
+the exact Base64-decoded `p=` bytes. For RSA this hashes the DER-encoded
+SubjectPublicKeyInfo; for Ed25519 it hashes the 32-byte raw public key. The
+fingerprint is informational and is not a certificate or SSH fingerprint. It
+does not prove possession of the private key or verify a DKIM signature.
 
 ## RSA Validation
 

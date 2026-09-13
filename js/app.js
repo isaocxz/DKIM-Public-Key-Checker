@@ -405,6 +405,7 @@ function setUnavailablePublicKeyDetails(status) {
   $("algorithm").textContent = "—";
   $("bits").textContent = "—";
   $("exponent").textContent = "—";
+  $("fingerprint").textContent = "—";
   $("modulus").textContent = "—";
 }
 
@@ -431,6 +432,7 @@ async function analyze(record, meta={}) {
       exponent:e,
       bitLength:bitlen,
       modulusBytes,
+      fingerprint,
       byteLength:keyByteLength
     } = keyInspection;
     $("overall").textContent = overallResult;
@@ -512,6 +514,7 @@ async function analyze(record, meta={}) {
     } else {
       setUnavailablePublicKeyDetails(pState === "revoked" ? "Revoked" : "Invalid");
     }
+    $("fingerprint").textContent = fingerprint || "—";
     renderValidationChecks(checks);
     $("rawRecord").textContent = info.logical;
     renderRawTxtChunks(meta.rawChunks || info.chunks);
