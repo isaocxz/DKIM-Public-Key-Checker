@@ -6,6 +6,10 @@ A browser-based tool for inspecting and validating DKIM DNS public-key records.
 
 Unlike many DKIM lookup tools that mainly answer **“Is this record valid?”**, this checker also shows **why** by exposing the DNS, DKIM, and public-key validation stages.
 
+You can also validate a provider-issued DKIM TXT value **before publishing it
+to DNS**. Paste the value directly to confirm its syntax, key format, and
+actual RSA key size before requesting or applying a DNS change.
+
 ## Overview
 
 ```text
@@ -40,6 +44,7 @@ DNS Lookup mode                         TXT Record mode
 | Capability | Typical online DKIM checker | This checker |
 | --- | :---: | :---: |
 | DKIM record lookup | ✓ | ✓ |
+| Validation before DNS publication | Varies | ✓ |
 | CNAME chain and final TXT owner from one DoH response | Usually not shown | ✓ |
 | Likely DKIM provider from a recognized CNAME final owner | Usually not shown | ✓ |
 | Basic syntax validation | ✓ | ✓ |
@@ -122,7 +127,9 @@ If direct DoH access is unavailable, use TXT Record mode with output from a loca
 
 ### TXT Record mode
 
-Paste the DKIM TXT record directly:
+Paste the DKIM TXT record directly to validate it before or after DNS
+publication. This can confirm that a provider-issued key has the expected
+algorithm and key size before the DNS record is changed:
 
 ```text
 v=DKIM1; k=rsa; p=MIIBIjANBgkqh...
