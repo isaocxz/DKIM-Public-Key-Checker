@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DKIM Public Key Checker – Validate DNS Records</title>
-<meta name="description" content="Check DKIM public key records through DNS over HTTPS or direct TXT input. Validate RSA and Ed25519 keys, DNSSEC status, and CNAME resolution paths.">
+<meta name="description" content="Check DKIM public key records through DNS over HTTPS, direct TXT input, or a DKIM-Signature header. Validate RSA and Ed25519 keys, DNSSEC status, and CNAME resolution paths.">
 <link rel="canonical" href="https://isaocxz.github.io/DKIM-Public-Key-Checker/">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,7 +14,7 @@
     <h1>DKIM Public Key Checker</h1>
 
     <div class="mode-title">Choose a check method</div>
-    <p class="mode-help">Fetch the record from DNS or paste a TXT record directly.</p>
+    <p class="mode-help">Fetch from DNS, paste a TXT record, or extract the lookup name from a DKIM-Signature header.</p>
 
     <div class="tabs" role="tablist" aria-label="Check method">
       <button id="tabDns" class="tab active" role="tab" aria-selected="true">
@@ -25,11 +25,20 @@
         <span class="tab-title">TXT Record</span>
         <span class="tab-sub">Check direct TXT input</span>
       </button>
+      <button id="tabSignature" class="tab" role="tab" aria-selected="false">
+        <span class="tab-title">DKIM-Signature</span>
+        <span class="tab-sub">Extract d= and s=</span>
+      </button>
     </div>
 
     <section id="dnsMode" class="mode-panel">
       <label class="field-label" for="fqdn">DKIM DNS Name</label>
       <input id="fqdn" placeholder="selector._domainkey.example.com" autocomplete="off" spellcheck="false">
+      <div id="signatureSource" class="signature-source hidden" aria-live="polite">
+        <strong>Generated from DKIM-Signature</strong>
+        <span>d=<code id="signatureDomain"></code></span>
+        <span>s=<code id="signatureSelector"></code></span>
+      </div>
       <label class="field-label" for="resolver" style="margin-top:14px">DNS Resolver</label>
       <select id="resolver">
         <option value="google">Google Public DNS</option>
@@ -51,6 +60,13 @@
       <textarea id="txtInput" placeholder='"v=DKIM1; k=rsa; "&#10;"p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A..."'></textarea>
       <button id="txtCheck">Validate</button>
       <p class="note">No DNS query is made. The input is processed only in your browser and is not sent to an external service. DNS-level properties such as TXT RR count and DNSSEC are not available in this mode.</p>
+    </section>
+
+    <section id="signatureMode" class="mode-panel hidden">
+      <label class="field-label" for="signatureInput">DKIM-Signature Header</label>
+      <textarea id="signatureInput" placeholder="DKIM-Signature: v=1; a=rsa-sha256;&#10; d=example.com; s=selector1; ..."></textarea>
+      <button id="signatureCheck">Extract &amp; Lookup</button>
+      <p class="note">Extracts only d= and s=, then continues with the existing DNS lookup. It does not verify the message signature.</p>
     </section>
   </div>
 

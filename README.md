@@ -77,6 +77,13 @@ before lookup.
 
 Select a resolver and run **Lookup & Validate**.
 
+Alternatively, choose **DKIM-Signature**, paste one header field, and run
+**Extract & Lookup**. The checker extracts only the signing domain (`d=`) and
+selector (`s=`), generates `<selector>._domainkey.<signing-domain>`, and passes
+that name to the same DNS lookup flow. Folded header lines are accepted. This
+mode locates and validates the public-key record; it does not verify the
+message signature itself.
+
 Choose **Custom DoH endpoint** to query another HTTPS resolver that supports
 RFC 8484 GET requests using DNS wire format. The endpoint is used only for the
 current page session and is not stored or added to the page URL. Existing query
@@ -334,6 +341,7 @@ js/
  ├─ app.js              → UI and lookup orchestration
  ├─ dkim-analysis.js    → Validation result model
  ├─ dkim-fqdn.js        → DKIM DNS name validation
+ ├─ dkim-signature.js   → d= and s= extraction for DNS lookup
  ├─ dkim-validation.js  → DKIM and public-key validation
  │    ├─ Web Crypto API → SPKI / RSA
  │    └─ Base64 decoder → Ed25519 raw-key length

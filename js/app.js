@@ -10,6 +10,7 @@ import {
 } from "./dkim-validation.js";
 import { buildValidationResult } from "./dkim-analysis.js";
 import { validateDkimFqdn } from "./dkim-fqdn.js";
+import { extractDkimLookupTarget } from "./dkim-signature.js";
 import {
   parseDnsSoaMessage,
   parseDnsTxtMessage
@@ -18,7 +19,8 @@ import { dohWireQuery } from "./doh-transport.js";
 
 /*
  * Architecture:
- * DNS and TXT input are separate adapters; both converge on analyze().
+ * DNS, TXT, and DKIM-Signature input are adapters for the same lookup and
+ * analysis flow.
  * dkim-analysis.js builds the DOM-independent validation result model.
  * dkim-validation.js owns DKIM parsing and public-key inspection primitives.
  * dns-wire.js preserves DNS message and TXT character-string boundaries.
@@ -36,7 +38,11 @@ function setDnsLookupInProgress(inProgress) {
   $("customDohEndpoint").disabled = inProgress || $("resolver").value !== "custom";
   $("dnsCheck").disabled = inProgress;
   $("dnsCheck").textContent = inProgress ? "Looking up..." : "Lookup & Validate";
+  $("signatureInput").disabled = inProgress;
+  $("signatureCheck").disabled = inProgress;
+  $("signatureCheck").textContent = inProgress ? "Looking up..." : "Extract & Lookup";
   $("dnsMode").setAttribute("aria-busy", String(inProgress));
+  $("signatureMode").setAttribute("aria-busy", String(inProgress));
 }
 
 function showError(prefix, error) {
@@ -51,12 +57,17 @@ function isDnsSource(meta) {
 
 function showMode(mode) {
   const dns = mode === "dns";
+  const txt = mode === "txt";
+  const signature = mode === "signature";
   $("dnsMode").classList.toggle("hidden", !dns);
-  $("txtMode").classList.toggle("hidden", dns);
+  $("txtMode").classList.toggle("hidden", !txt);
+  $("signatureMode").classList.toggle("hidden", !signature);
   $("tabDns").classList.toggle("active", dns);
-  $("tabTxt").classList.toggle("active", !dns);
+  $("tabTxt").classList.toggle("active", txt);
+  $("tabSignature").classList.toggle("active", signature);
   $("tabDns").setAttribute("aria-selected", String(dns));
-  $("tabTxt").setAttribute("aria-selected", String(!dns));
+  $("tabTxt").setAttribute("aria-selected", String(txt));
+  $("tabSignature").setAttribute("aria-selected", String(signature));
   hideOutput();
 }
 function hideOutput() {
@@ -65,6 +76,7 @@ function hideOutput() {
 }
 $("tabDns").onclick = () => showMode("dns");
 $("tabTxt").onclick = () => showMode("txt");
+$("tabSignature").onclick = () => showMode("signature");
 
 function hexColon(bytes,width=16) {
   const p=[...bytes].map(b=>b.toString(16).padStart(2,"0").toUpperCase());
@@ -591,11 +603,11 @@ function updateUrlFqdn(name) {
   history.replaceState(null, "", url);
 }
 
-async function dnsLookup() {
+async function runDnsLookup(rawName) {
   if (dnsLookupInProgress) return;
   hideOutput();
 
-  const fqdn = validateDkimFqdn($("fqdn").value);
+  const fqdn = validateDkimFqdn(rawName);
   if(!fqdn.ok) {
     showError("Error", new Error(fqdn.error));
     return;
@@ -685,9 +697,32 @@ async function dnsLookup() {
   }
 }
 
+function dnsLookup() {
+  $("signatureSource").classList.add("hidden");
+  return runDnsLookup($("fqdn").value);
+}
+
+function signatureLookup() {
+  hideOutput();
+  const target = extractDkimLookupTarget($("signatureInput").value);
+  if (!target.ok) {
+    showError("Error", new Error(target.error));
+    return;
+  }
+
+  $("fqdn").value = target.fqdn;
+  $("signatureDomain").textContent = target.domain;
+  $("signatureSelector").textContent = target.selector;
+  $("signatureSource").classList.remove("hidden");
+  showMode("dns");
+  runDnsLookup(target.fqdn);
+}
+
 $("dnsCheck").onclick = dnsLookup;
 $("txtCheck").onclick = () => analyze($("txtInput").value, {source:TXT_RECORD_SOURCE});
+$("signatureCheck").onclick = signatureLookup;
 $("fqdn").addEventListener("keydown", e => { if(e.key==="Enter") dnsLookup(); });
+$("fqdn").addEventListener("input", () => $("signatureSource").classList.add("hidden"));
 $("resolver").addEventListener("change", updateCustomDohVisibility);
 updateCustomDohVisibility();
 
