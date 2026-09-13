@@ -9,6 +9,7 @@ import {
   validation,
   validationOverall
 } from "./dkim-validation.js";
+import { inferDkimProvider } from "./dkim-provider.js";
 
 function addNotEvaluatedKeyChecks(checks, reason) {
   checks.push(validation("info", "Base64", `Not evaluated because ${reason}`, "key"));
@@ -59,6 +60,7 @@ async function buildValidationResult(record, meta = {}) {
 
   /* Validation follows DNS / TXT Record -> DKIM Key Record -> Public Key. */
   const checks = [];
+  const providerInference = inferDkimProvider(meta.name, meta.cnameChain);
 
   if (meta.txtRrCount !== undefined) {
     checks.push(validation("pass", "DNS TXT lookup", "Record found", "dns"));
@@ -143,7 +145,8 @@ async function buildValidationResult(record, meta = {}) {
     keyType,
     pState,
     pValue,
-    keyInspection
+    keyInspection,
+    providerInference
   };
 }
 

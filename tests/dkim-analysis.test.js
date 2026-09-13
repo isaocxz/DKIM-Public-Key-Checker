@@ -54,4 +54,25 @@ describe("DKIM validation result model", () => {
       "1 CNAME hop; final TXT owner target._domainkey.example.com"
     );
   });
+
+  test("includes a provider inferred from a CNAME final owner", async () => {
+    const result = await buildValidationResult(
+      `v=DKIM1; k=ed25519; p=${VALID_ED25519_KEY}`,
+      {
+        name: "s1.domainkey.u123.wl.sendgrid.net",
+        txtRrCount: 1,
+        cnameChain: [{
+          owner: "s1._domainkey.example.com",
+          target: "s1.domainkey.u123.wl.sendgrid.net"
+        }]
+      }
+    );
+
+    expect(result.providerInference).toEqual({
+      id: "twilio-sendgrid",
+      name: "Twilio SendGrid",
+      confidence: "High",
+      evidence: "Final TXT owner s1.domainkey.u123.wl.sendgrid.net"
+    });
+  });
 });

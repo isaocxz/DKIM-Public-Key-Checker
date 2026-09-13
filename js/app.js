@@ -423,7 +423,8 @@ async function analyze(record, meta={}) {
       keyType,
       pState,
       pValue,
-      keyInspection
+      keyInspection,
+      providerInference
     } = await buildValidationResult(record, meta);
     const {
       base64Ok,
@@ -464,6 +465,13 @@ async function analyze(record, meta={}) {
     $("txtChunks").textContent = `${info.chunks.length}`;
     $("pChunks").textContent = `${countPChunks(info.chunks)}`;
     $("dnssec").textContent = meta.dnssec || "Not checked / not applicable";
+
+    $("providerInference").classList.toggle("hidden", !providerInference);
+    $("providerName").textContent = providerInference?.name || "";
+    $("providerConfidence").textContent = providerInference?.confidence || "";
+    $("providerEvidence").textContent = providerInference?.evidence || "";
+    // Make a provider match visible without requiring the user to discover it.
+    $("auxiliaryInfo").open = Boolean(providerInference);
 
     // SOA is auxiliary DNS context and does not affect validation status.
     $("soaZone").textContent = meta.soa?.zone || "—";

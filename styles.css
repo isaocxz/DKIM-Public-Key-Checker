@@ -117,6 +117,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f7f7;border:1px so
 .raw-chunk-meter.over-limit::-moz-progress-bar{background:#b3261e}
 @media(max-width:1200px){.raw-chunk code{white-space:pre-wrap;overflow-wrap:anywhere}}
 .auxiliary-card{padding:0}
+.provider-inference{margin-bottom:12px}
 .auxiliary-card>summary{margin:0;padding:16px 18px;cursor:pointer;list-style-position:outside}
 .detail-summary-title{font-size:17px;font-weight:800}
 .auxiliary-toggle{margin-left:auto;border-radius:999px;background:#e8eef5;color:#245b91;padding:5px 10px;font-size:11px;font-weight:800;white-space:nowrap}

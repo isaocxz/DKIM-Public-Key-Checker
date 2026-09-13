@@ -180,13 +180,18 @@
       </section>
     </div>
 
-    <details class="detail-card auxiliary-card">
+    <details id="auxiliaryInfo" class="detail-card auxiliary-card">
       <summary class="detail-card-header">
         <span class="detail-number auxiliary">i</span>
         <span class="detail-summary-title">DNS Auxiliary Information</span>
         <span class="auxiliary-toggle" aria-hidden="true"></span>
       </summary>
       <div class="detail-card-body">
+        <div id="providerInference" class="grid provider-inference hidden">
+          <div class="label">Likely DKIM Provider</div><div id="providerName" class="value"></div>
+          <div class="label">Confidence</div><div id="providerConfidence" class="value"></div>
+          <div class="label">Evidence</div><div id="providerEvidence" class="value"></div>
+        </div>
         <div class="grid">
           <div class="label">Zone</div><div id="soaZone" class="value"></div>
           <div class="label">SOA MNAME</div><div id="soaMname" class="value"></div>

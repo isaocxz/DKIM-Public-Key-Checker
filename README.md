@@ -27,7 +27,7 @@ DNS Lookup mode                         TXT Record mode
 
 | Area | Checks / information |
 | --- | --- |
-| DNS | CNAME chain, final TXT owner, TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
+| DNS | CNAME chain, final TXT owner, likely DKIM provider, TXT RR count, `character-string` structure, RCODE, DNSSEC AD bit, SOA |
 | DKIM | RFC 6376 tags, duplicates, defaults, deprecated `g=`, unknown tags, revoked `p=` |
 | Public key | Base64, RSA SPKI/structure/modulus/exponent, Ed25519 32-byte encoding |
 | Security | RSA key length based on RFC 8301 |
@@ -41,6 +41,7 @@ DNS Lookup mode                         TXT Record mode
 | --- | :---: | :---: |
 | DKIM record lookup | ✓ | ✓ |
 | CNAME chain and final TXT owner from one DoH response | Usually not shown | ✓ |
+| Likely DKIM provider from a recognized CNAME final owner | Usually not shown | ✓ |
 | Basic syntax validation | ✓ | ✓ |
 | RSA key length | Often | ✓ |
 | Ed25519 key format and length | Varies | ✓ |
@@ -341,6 +342,14 @@ A TXT RR must contain at least one length-prefixed `character-string`. An empty 
 
 When a selector is an alias, the checker processes the CNAME chain and final TXT RRset returned in a single DoH response. If the resolver cannot complete the CNAME chain, the checker does not issue an additional query to retrieve the final TXT RRset. Keeping the result to one response also means that the displayed DNSSEC status uses the AD bit from that response.
 
+For recognized provider-managed final TXT owners, **DNS Auxiliary
+Information** shows a high-confidence likely DKIM provider and the owner used
+as evidence. The inference currently recognizes Microsoft 365 / Exchange
+Online, Amazon SES, Twilio SendGrid, Mailgun, HubSpot, and Mailchimp
+Transactional. It is informational and does not affect validation status.
+Direct TXT records, selector names, SPF, and MX records are not used for this
+inference.
+
 ## Implementation
 
 ```text
@@ -351,6 +360,7 @@ js/
  ├─ dkim-analysis.js    → Validation result model
  ├─ dkim-fqdn.js        → DKIM DNS name validation
  ├─ dkim-signature.js   → d= and s= extraction for DNS lookup
+ ├─ dkim-provider.js    → Provider inference from a CNAME final owner
  ├─ dkim-validation.js  → DKIM and public-key validation
  │    ├─ Web Crypto API → SPKI / RSA
  │    └─ Base64 decoder → Ed25519 raw-key length
@@ -364,6 +374,11 @@ is used only for development-time logic tests.
 
 DNS message encoding and response parsing are implemented directly in JavaScript.
 
+The provider-inference behavior is documented in
+[`DKIM-PROVIDER-INFERENCE.md`](DKIM-PROVIDER-INFERENCE.md). It deliberately
+requires a recognized CNAME final owner and does not identify a provider from
+a selector name alone.
+
 ## Scope
 
 | Included | Not included |
@@ -374,6 +389,7 @@ DNS message encoding and response parsing are implemented directly in JavaScript
 | Ed25519 encoding and length validation | Ed25519 curve-point validation |
 | Resolver DNSSEC status | SPF validation |
 | SOA information | DMARC validation/alignment |
+| Likely DKIM provider from recognized CNAME final owners | General email-platform discovery |
 
 ## Requirements
 
