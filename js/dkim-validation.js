@@ -129,6 +129,12 @@ function decodeBase64Strict(base64) {
   /*
    * Validation data must not terminate the UI with an exception.
    * Return an explicit result instead of throwing for malformed p= values.
+   *
+   * This intentionally does not verify that the unused low-order bits of
+   * the last meaningful Base64 symbol before padding are zero. Major DKIM
+   * verifier implementations (OpenDKIM, rspamd) do not check this either,
+   * so a p= value that differs only in those discarded bits still decodes
+   * to the same key everywhere.
    */
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
     return {ok:false, bytes:null, error:"The p= value is not valid Base64."};
