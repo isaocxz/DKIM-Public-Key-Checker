@@ -23,6 +23,9 @@ describe("DKIM validation result model", () => {
       status: "pass",
       detail: "32 bytes (256 bit)"
     });
+    expect(new Set(result.checks.map(check => check.category))).toEqual(
+      new Set(["dns", "dkim", "key"])
+    );
   });
 
   test("reports a revoked key in the result model", async () => {

@@ -165,10 +165,6 @@ function bytesToBigInt(bytes) {
   return value;
 }
 
-function validation(status, check, detail, category="key") {
-  return {status, check, detail, category};
-}
-
 /*
  * RFC 6376 hyphenated-word lists permit FWS around ':' but not within a
  * token. Preserve empty items so leading, trailing, and repeated colons are
@@ -176,7 +172,7 @@ function validation(status, check, detail, category="key") {
  */
 function parseColonTokenList(value, {allowAsterisk=false}={}) {
   const values = value.split(":").map(item => item.trim());
-  const empty = values.some(item => item === "");
+  const hasEmptyItem = values.some(item => item === "");
   const invalid = values.filter(item => {
     if (item === "") {
       return false;
@@ -186,7 +182,7 @@ function parseColonTokenList(value, {allowAsterisk=false}={}) {
     }
     return !HYPHENATED_WORD_RE.test(item);
   });
-  return {values, empty, invalid};
+  return {values, hasEmptyItem, invalid};
 }
 
 function describeSelectorFlags(values) {
@@ -226,6 +222,132 @@ function describeHashAlgorithms(values) {
     return `${value}: unrecognized algorithm (ignored)`;
   });
   return descriptions.join("; ");
+}
+
+function validateHashAlgorithmsTag(value) {
+  if (value === undefined) {
+    return {
+      status:"info",
+      check:"Hash algorithms",
+      detail:"h= omitted; all algorithms are allowed by the record",
+      category:"dkim"
+    };
+  }
+
+  const {values, hasEmptyItem, invalid} = parseColonTokenList(value);
+  if (hasEmptyItem) {
+    let detail;
+    if (value === "") {
+      detail = "h= is present but empty";
+    } else {
+      detail = "h= contains an empty list item";
+    }
+    return {status:"fail", check:"Hash algorithms", detail, category:"dkim"};
+  }
+  if (invalid.length) {
+    return {
+      status:"fail",
+      check:"Hash algorithms",
+      detail:`Invalid token(s): ${invalid.join(", ")}`,
+      category:"dkim"
+    };
+  }
+
+  const includesSha1 = values.includes("sha1");
+  const includesSha256 = values.includes("sha256");
+  let status = "pass";
+  if (includesSha1) {
+    status = includesSha256 ? "warn" : "fail";
+  }
+  return {
+    status,
+    check:"Hash algorithms",
+    detail:`h=${values.join(":")}; ${describeHashAlgorithms(values)}`,
+    category:"dkim"
+  };
+}
+
+function validateServiceTypeTag(value) {
+  if (value === undefined) {
+    return {
+      status:"pass",
+      check:"Service type",
+      detail:"s= omitted; default is * (all service types, including email)",
+      category:"dkim"
+    };
+  }
+
+  const {values, hasEmptyItem, invalid} = parseColonTokenList(value, {allowAsterisk:true});
+  if (hasEmptyItem) {
+    let detail;
+    if (value === "") {
+      detail = "s= is present but empty";
+    } else {
+      detail = "s= contains an empty list item";
+    }
+    return {status:"fail", check:"Service type", detail, category:"dkim"};
+  }
+  if (invalid.length) {
+    return {
+      status:"fail",
+      check:"Service type",
+      detail:`Invalid token(s): ${invalid.join(", ")}`,
+      category:"dkim"
+    };
+  }
+
+  const appliesToEmail = values.includes("*") || values.includes("email");
+  const description = `s=${values.join(":")}; ${describeServiceTypes(values)}`;
+  if (appliesToEmail) {
+    return {
+      status:"pass",
+      check:"Service type",
+      detail:`${description}; applies to email`,
+      category:"dkim"
+    };
+  }
+  return {
+    status:"fail",
+    check:"Service type",
+    detail:`${description}; does not apply to email`,
+    category:"dkim"
+  };
+}
+
+function validateSelectorFlagsTag(value) {
+  if (value === undefined) {
+    return {
+      status:"info",
+      check:"Selector flags",
+      detail:"t= omitted; no flags set",
+      category:"dkim"
+    };
+  }
+
+  const {values, hasEmptyItem, invalid} = parseColonTokenList(value);
+  if (hasEmptyItem) {
+    let detail;
+    if (value === "") {
+      detail = "t= is present but empty";
+    } else {
+      detail = "t= contains an empty list item";
+    }
+    return {status:"fail", check:"Selector flags", detail, category:"dkim"};
+  }
+  if (invalid.length) {
+    return {
+      status:"fail",
+      check:"Selector flags",
+      detail:`Invalid token(s): ${invalid.join(", ")}`,
+      category:"dkim"
+    };
+  }
+  return {
+    status:"info",
+    check:"Selector flags",
+    detail:`t=${values.join(":")}; ${describeSelectorFlags(values)}`,
+    category:"dkim"
+  };
 }
 
 /*
@@ -287,136 +409,149 @@ function classifyDkimTags(tags) {
 
 /* Focused RFC 6376 Section 3.2 and Section 3.6.1 checks. */
 function addRfc6376Checks(checks, info) {
-  const startIndex = checks.length;
   const first = info.fields.find(field => field.name);
   const malformed = info.fields.filter(field => field.malformed);
   const {deprecated, unknown} = classifyDkimTags(info.tags);
 
-  checks.push(malformed.length
-    ? validation("fail","RFC tag-list syntax",
-        `Malformed field(s): ${malformed.map(item=>item.raw).join("; ")}`)
-    : validation("pass","RFC tag-list syntax","tag=value list"));
+  if (malformed.length) {
+    checks.push({
+      status:"fail",
+      check:"RFC tag-list syntax",
+      detail:`Malformed field(s): ${malformed.map(item=>item.raw).join("; ")}`,
+      category:"dkim"
+    });
+  } else {
+    checks.push({
+      status:"pass",
+      check:"RFC tag-list syntax",
+      detail:"tag=value list",
+      category:"dkim"
+    });
+  }
 
-  checks.push(info.duplicates.length
-    ? validation("fail","Duplicate tags",
-        `Duplicate tag(s): ${[...new Set(info.duplicates)].join(", ")}`)
-    : validation("pass","Duplicate tags","None"));
+  if (info.duplicates.length) {
+    checks.push({
+      status:"fail",
+      check:"Duplicate tags",
+      detail:`Duplicate tag(s): ${[...new Set(info.duplicates)].join(", ")}`,
+      category:"dkim"
+    });
+  } else {
+    checks.push({status:"pass", check:"Duplicate tags", detail:"None", category:"dkim"});
+  }
 
   // v= is RECOMMENDED, defaults to DKIM1, and MUST be first if present.
   if (info.tags.v !== undefined) {
-    checks.push(info.tags.v === "DKIM1"
-      ? validation("pass","RFC version","v=DKIM1")
-      : validation("fail","RFC version",`v=${info.tags.v}; must be DKIM1`));
-    checks.push(first?.name === "v"
-      ? validation("pass","v= tag position","First tag")
-      : validation("fail","v= tag position","v= is present but is not the first tag"));
+    if (info.tags.v === "DKIM1") {
+      checks.push({status:"pass", check:"RFC version", detail:"v=DKIM1", category:"dkim"});
+    } else {
+      checks.push({
+        status:"fail",
+        check:"RFC version",
+        detail:`v=${info.tags.v}; must be DKIM1`,
+        category:"dkim"
+      });
+    }
+
+    if (first?.name === "v") {
+      checks.push({status:"pass", check:"v= tag position", detail:"First tag", category:"dkim"});
+    } else {
+      checks.push({
+        status:"fail",
+        check:"v= tag position",
+        detail:"v= is present but is not the first tag",
+        category:"dkim"
+      });
+    }
   } else {
-    checks.push(validation("pass","RFC version","v= omitted; default is DKIM1"));
+    checks.push({
+      status:"pass",
+      check:"RFC version",
+      detail:"v= omitted; default is DKIM1",
+      category:"dkim"
+    });
   }
 
   // h= is OPTIONAL. Empty h= is invalid because the grammar requires at least one algorithm.
-  if (info.tags.h !== undefined) {
-    const {values, empty, invalid} = parseColonTokenList(info.tags.h);
-    const includesSha1 = values.includes("sha1");
-    const includesSha256 = values.includes("sha256");
-    let status = "pass";
-    if (includesSha1) {
-      status = includesSha256 ? "warn" : "fail";
-    }
-    checks.push(empty
-      ? validation("fail","Hash algorithms",
-          info.tags.h === "" ? "h= is present but empty" : "h= contains an empty list item")
-      : invalid.length
-        ? validation("fail","Hash algorithms",`Invalid token(s): ${invalid.join(", ")}`)
-        : validation(
-            status,
-            "Hash algorithms",
-            `h=${values.join(":")}; ${describeHashAlgorithms(values)}`
-          ));
-  } else {
-    checks.push(validation("info","Hash algorithms","h= omitted; all algorithms are allowed by the record"));
-  }
+  checks.push(validateHashAlgorithmsTag(info.tags.h));
 
   // k= is OPTIONAL and defaults to rsa only when omitted. An explicitly
   // empty value does not match key-k-tag-type and is therefore invalid.
   if (info.tags.k === undefined) {
-    checks.push(validation("pass","Key type","k= omitted; default is rsa"));
+    checks.push({status:"pass", check:"Key type", detail:"k= omitted; default is rsa", category:"dkim"});
   } else if (info.tags.k === "") {
-    checks.push(validation("fail","Key type","k= is present but empty"));
+    checks.push({status:"fail", check:"Key type", detail:"k= is present but empty", category:"dkim"});
   } else if (info.tags.k === "rsa") {
-    checks.push(validation("pass","Key type","k=rsa"));
+    checks.push({status:"pass", check:"Key type", detail:"k=rsa", category:"dkim"});
   } else if (info.tags.k === "ed25519") {
-    checks.push(validation("pass","Key type","k=ed25519"));
+    checks.push({status:"pass", check:"Key type", detail:"k=ed25519", category:"dkim"});
   } else {
-    checks.push(validation("fail","Key type",`k=${info.tags.k}; unsupported key type`));
+    checks.push({status:"fail", check:"Key type",
+      detail:`k=${info.tags.k}; unsupported key type`, category:"dkim"});
   }
 
   // n= is OPTIONAL and uses RFC 2045 qp-section encoding.
   if (info.tags.n !== undefined) {
     const qpSection = validateQpSection(info.tags.n);
-    checks.push(qpSection.ok
-      ? validation("info","Notes","n= present; valid qp-section; informational only")
-      : validation("fail","Notes",qpSection.error));
+    if (qpSection.ok) {
+      checks.push({
+        status:"info",
+        check:"Notes",
+        detail:"n= present; valid qp-section; informational only",
+        category:"dkim"
+      });
+    } else {
+      checks.push({status:"fail", check:"Notes", detail:qpSection.error, category:"dkim"});
+    }
   } else {
-    checks.push(validation("info","Notes","n= omitted; default is empty"));
+    checks.push({status:"info", check:"Notes", detail:"n= omitted; default is empty", category:"dkim"});
   }
 
   // p= is REQUIRED. Empty p= is handled separately as a revoked key.
-  checks.push(info.tags.p !== undefined
-    ? validation("pass","p= tag","Present (required tag)")
-    : validation("fail","p= tag","Missing required p= tag"));
+  if (info.tags.p !== undefined) {
+    checks.push({status:"pass", check:"p= tag", detail:"Present (required tag)", category:"dkim"});
+  } else {
+    checks.push({status:"fail", check:"p= tag", detail:"Missing required p= tag", category:"dkim"});
+  }
 
   // s= is OPTIONAL and defaults to *. For DKIM email use, email or * must apply.
-  if (info.tags.s !== undefined) {
-    const {values, empty, invalid} = parseColonTokenList(info.tags.s, {allowAsterisk:true});
-    const email = values.includes("*") || values.includes("email");
-    checks.push(empty
-      ? validation("fail","Service type",
-          info.tags.s === "" ? "s= is present but empty" : "s= contains an empty list item")
-      : invalid.length
-        ? validation("fail","Service type",`Invalid token(s): ${invalid.join(", ")}`)
-        : email
-          ? validation("pass","Service type",
-              `s=${values.join(":")}; ${describeServiceTypes(values)}; applies to email`)
-          : validation("fail","Service type",
-              `s=${values.join(":")}; ${describeServiceTypes(values)}; does not apply to email`));
-  } else {
-    checks.push(validation("pass","Service type",
-      "s= omitted; default is * (all service types, including email)"));
-  }
+  checks.push(validateServiceTypeTag(info.tags.s));
 
   // t= is OPTIONAL. Empty t= is invalid because the grammar requires at least one flag.
-  if (info.tags.t !== undefined) {
-    const {values, empty, invalid} = parseColonTokenList(info.tags.t);
-    checks.push(empty
-      ? validation("fail","Selector flags",
-          info.tags.t === "" ? "t= is present but empty" : "t= contains an empty list item")
-      : invalid.length
-        ? validation("fail","Selector flags",`Invalid token(s): ${invalid.join(", ")}`)
-        : validation("info","Selector flags",
-            `t=${values.join(":")}; ${describeSelectorFlags(values)}`));
-  } else {
-    checks.push(validation("info","Selector flags","t= omitted; no flags set"));
-  }
+  checks.push(validateSelectorFlagsTag(info.tags.t));
 
   // RFC 6376 Appendix C.2 deprecates the former g= tag and requires it to be ignored.
   if (deprecated.length) {
     const gValue = info.tags.g;
-    checks.push(gValue === "*"
-      ? validation("info","Deprecated tags","g=* is deprecated and ignored")
-      : validation("warn","Deprecated tags",
-          `g=${gValue} is deprecated and ignored; the intended identity restriction is not enforced`));
+    if (gValue === "*") {
+      checks.push({
+        status:"info",
+        check:"Deprecated tags",
+        detail:"g=* is deprecated and ignored",
+        category:"dkim"
+      });
+    } else {
+      checks.push({
+        status:"warn",
+        check:"Deprecated tags",
+        detail:`g=${gValue} is deprecated and ignored; the intended identity restriction is not enforced`,
+        category:"dkim"
+      });
+    }
   } else {
-    checks.push(validation("info","Deprecated tags","None"));
+    checks.push({status:"info", check:"Deprecated tags", detail:"None", category:"dkim"});
   }
 
   // RFC 6376 allows extension tags; implementations that do not understand them MUST ignore them.
-  checks.push(unknown.length
-    ? validation("info","Unknown tags",`${unknown.join(", ")} (ignored)`)
-    : validation("info","Unknown tags","None"));
-
-  for (let index=startIndex; index<checks.length; index++) {
-    checks[index].category = "dkim";
+  if (unknown.length) {
+    checks.push({
+      status:"info",
+      check:"Unknown tags",
+      detail:`${unknown.join(", ")} (ignored)`,
+      category:"dkim"
+    });
+  } else {
+    checks.push({status:"info", check:"Unknown tags", detail:"None", category:"dkim"});
   }
 }
 
@@ -477,14 +612,16 @@ function inspectEd25519PublicKey(pValue) {
   }
 
   const byteLength = decoded.bytes.length;
+  let error = "";
+  if (byteLength !== 32) {
+    error = `The Ed25519 public key is ${byteLength} bytes; RFC 8463 requires 32 bytes.`;
+  }
   return {
     base64Ok:true,
     ed25519Ok:byteLength === 32,
     decodedBytes:decoded.bytes,
     byteLength,
-    error:byteLength === 32
-      ? ""
-      : `The Ed25519 public key is ${byteLength} bytes; RFC 8463 requires 32 bytes.`
+    error
   };
 }
 
@@ -509,6 +646,5 @@ export {
   parseTags,
   sha256Fingerprint,
   validateQpSection,
-  validation,
   validationOverall
 };

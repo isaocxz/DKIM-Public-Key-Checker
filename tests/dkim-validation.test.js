@@ -79,6 +79,12 @@ describe("DKIM tag parsing", () => {
 });
 
 describe("RFC 6376 validation", () => {
+  test("categorizes every RFC record check as DKIM", () => {
+    const checks = rfcChecks("v=DKIM1; h=sha256; k=rsa; s=email; t=s; p=AAAA");
+
+    expect(checks.every(check => check.category === "dkim")).toBe(true);
+  });
+
   test("reports lowercase g= as deprecated instead of unknown", () => {
     const checks = rfcChecks("v=DKIM1; g=*; p=AAAA");
 

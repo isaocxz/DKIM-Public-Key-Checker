@@ -5,7 +5,6 @@ import {
   countPChunks,
   formatKeyTypeTag,
   hasDkimPublicKeyTag,
-  validation,
   validationOverall
 } from "./dkim-validation.js";
 import { buildValidationResult } from "./dkim-analysis.js";
@@ -350,10 +349,13 @@ function dnsFailureDetail(error) {
 
 function renderDnsLookupFailure(name, resolver, detail) {
   const checks = [
-    validation("fail","DNS TXT lookup",detail,"dns"),
-    validation("info","TXT record","Not evaluated because DNS lookup failed","dns"),
-    validation("info","DKIM Key Record","Not evaluated because DNS lookup failed","dkim"),
-    validation("info","Public Key","Not evaluated because DNS lookup failed","key")
+    {status:"fail", check:"DNS TXT lookup", detail, category:"dns"},
+    {status:"info", check:"TXT record",
+      detail:"Not evaluated because DNS lookup failed", category:"dns"},
+    {status:"info", check:"DKIM Key Record",
+      detail:"Not evaluated because DNS lookup failed", category:"dkim"},
+    {status:"info", check:"Public Key",
+      detail:"Not evaluated because DNS lookup failed", category:"key"}
   ];
 
   const overallResult = validationOverall(checks);
