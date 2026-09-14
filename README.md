@@ -365,6 +365,7 @@ styles.css  → Presentation
 js/
  ├─ app.js              → UI and lookup orchestration
  ├─ dkim-analysis.js    → Validation result model
+ ├─ dkim-dns-response.js → CNAME ordering and final TXT answer selection
  ├─ dkim-fqdn.js        → DKIM DNS name validation
  ├─ dkim-signature.js   → d= and s= extraction for DNS lookup
  ├─ dkim-provider.js    → Provider inference from a CNAME final owner

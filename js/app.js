@@ -4,10 +4,10 @@ import {
   classifyDkimTags,
   countPChunks,
   formatKeyTypeTag,
-  hasDkimPublicKeyTag,
   validationOverall
 } from "./dkim-validation.js";
 import { buildValidationResult } from "./dkim-analysis.js";
+import { processDkimDnsResponse } from "./dkim-dns-response.js";
 import { validateDkimFqdn } from "./dkim-fqdn.js";
 import { extractDkimLookupTarget } from "./dkim-signature.js";
 import {
@@ -120,34 +120,6 @@ function renderRawTxtChunks(chunks) {
     row.append(header, value, meter);
     container.append(row);
   });
-}
-
-function normalizeDnsName(name) {
-  return name.replace(/\.$/, "").toLowerCase();
-}
-
-function orderCnameChain(cnames, requestedName) {
-  const recordsByOwner = new Map();
-  for (const record of cnames) {
-    recordsByOwner.set(normalizeDnsName(record.owner), record);
-  }
-
-  const chain = [];
-  const visited = new Set();
-  let current = normalizeDnsName(requestedName);
-
-  while (recordsByOwner.has(current)) {
-    if (visited.has(current)) {
-      throw new Error("The DNS response contains a CNAME loop.");
-    }
-    visited.add(current);
-
-    const record = recordsByOwner.get(current);
-    chain.push(record);
-    current = normalizeDnsName(record.target);
-  }
-
-  return chain;
 }
 
 function appendResolutionNode(container, label, value, isFinal=false) {
@@ -650,42 +622,20 @@ async function runDnsLookup(rawName) {
     // This implementation processes the CNAME chain and final TXT RRset when
     // both are included in the same resolver response. Avoiding a follow-up
     // query also keeps the displayed AD bit tied to this response.
-    const cnameChain = orderCnameChain(parsed.cnames, name);
-    const finalOwner = cnameChain.length
-      ? cnameChain[cnameChain.length - 1].target
-      : name;
-    const finalAnswers = parsed.answers.filter(answer =>
-      normalizeDnsName(answer.name) === normalizeDnsName(finalOwner));
+    const {
+      cnameChain,
+      finalAnswers,
+      selectedAnswer
+    } = processDkimDnsResponse(parsed, name);
 
     if(!finalAnswers.length) {
       renderDnsLookupFailure(name,resolver,"No TXT record found");
       return;
     }
 
-    /*
-     * RFC 6376 §3.6.2.2: TXT RRs MUST be unique for a selector name.
-     * Multiple character-strings inside one TXT RR are valid and are
-     * concatenated; parsed.answers.length counts distinct TXT RRs.
-     *
-     * Even when multiple RRs exist, one p= record is selected below for
-     * diagnostic display. Validation itself is forced to FAIL for RR count > 1.
-     */
-    /*
-     * Do not require p= when selecting the TXT RR here.
-     * A missing p= is itself a DKIM Key Record validation case and must be
-     * passed to analyze(), which reports it as FAIL instead of stopping the
-     * DNS lookup path with an error.
-     *
-     * Prefer a record containing p= when present. Otherwise use the first TXT
-     * RR so malformed/missing-p records can still be fully validated.
-     */
-    const selected =
-      finalAnswers.find(answer => hasDkimPublicKeyTag(answer.logical))
-      || finalAnswers[0];
-
     // Re-create quoted presentation solely for the common analysis path;
     // chunk boundaries came from the actual TXT RDATA length octets.
-    const presentation=selected.chunks.map(c=>`"${c.replace(/\\/g,"\\\\").replace(/"/g,'\\"')}"`).join("\n");
+    const presentation=selectedAnswer.chunks.map(c=>`"${c.replace(/\\/g,"\\\\").replace(/"/g,'\\"')}"`).join("\n");
 
     // SOA lookup is intentionally auxiliary: failure does not fail the key check.
     const soa=await findNearestSoa(resolver,name);
@@ -693,14 +643,14 @@ async function runDnsLookup(rawName) {
     await analyze(presentation,{
       source:`${resolver.label} / DoH (RFC 8484 wire format)`,
       requestedName:name,
-      name:selected.name || name,
+      name:selectedAnswer.name || name,
       type:"TXT",
-      ttl:selected.ttl,
+      ttl:selectedAnswer.ttl,
       dnssec:parsed.ad ? "Secure (resolver AD=true)" : "Not authenticated (resolver AD=false)",
       txtRrCount:finalAnswers.length,
       cnameChain,
       soa,
-      rawChunks:selected.chunks
+      rawChunks:selectedAnswer.chunks
     });
   } catch(e) {
     // DNS acquisition/response failures belong to the validation flow.
