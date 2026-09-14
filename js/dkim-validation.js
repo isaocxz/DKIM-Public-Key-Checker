@@ -13,7 +13,9 @@ function txtPresentationInfo(raw) {
     // DNS JSON presentation can contain escaped quote/backslash sequences.
     chunks.push(match[1].replace(/\\"/g,'"').replace(/\\\\/g,'\\'));
   }
-  if (!chunks.length) return {logical:text, chunks:[text]};
+  if (!chunks.length) {
+    return {logical:text, chunks:[text]};
+  }
 
   return {logical:chunks.join(""), chunks};
 }
@@ -27,17 +29,23 @@ function countPChunks(chunks) {
     let part = chunk;
     if (!started) {
       const match = part.match(/(?:^|;)\s*p\s*=\s*(.*)$/);
-      if (!match) continue;
+      if (!match) {
+        continue;
+      }
       started = true;
       part = match[1];
       // The chunk containing p= counts even if its value begins empty;
       // it is the first character-string carrying the p tag/value.
       count++;
-      if (part.includes(";")) break;
+      if (part.includes(";")) {
+        break;
+      }
       continue;
     }
     count++;
-    if (part.includes(";")) break;
+    if (part.includes(";")) {
+      break;
+    }
   }
   return count;
 }
@@ -88,8 +96,11 @@ function parseTags(record) {
 
     fields.push({name:key, value, raw:part.trim(), malformed:false});
 
-    if (Object.prototype.hasOwnProperty.call(tags,key)) duplicates.push(key);
-    else tags[key] = value;
+    if (Object.prototype.hasOwnProperty.call(tags,key)) {
+      duplicates.push(key);
+    } else {
+      tags[key] = value;
+    }
   }
 
   return {logical, chunks, tags, fields, duplicates};
@@ -148,7 +159,9 @@ function base64UrlToBytes(value) {
 
 function bytesToBigInt(bytes) {
   let value = 0n;
-  for (const byte of bytes) value = (value << 8n) | BigInt(byte);
+  for (const byte of bytes) {
+    value = (value << 8n) | BigInt(byte);
+  }
   return value;
 }
 
@@ -165,8 +178,12 @@ function parseColonTokenList(value, {allowAsterisk=false}={}) {
   const values = value.split(":").map(item => item.trim());
   const empty = values.some(item => item === "");
   const invalid = values.filter(item => {
-    if (item === "") return false;
-    if (allowAsterisk && item === "*") return false;
+    if (item === "") {
+      return false;
+    }
+    if (allowAsterisk && item === "*") {
+      return false;
+    }
     return !HYPHENATED_WORD_RE.test(item);
   });
   return {values, empty, invalid};
@@ -174,8 +191,12 @@ function parseColonTokenList(value, {allowAsterisk=false}={}) {
 
 function describeSelectorFlags(values) {
   const descriptions = values.map(value => {
-    if (value === "y") return "y: testing mode";
-    if (value === "s") return "s: AUID (i=) domain must exactly match SDID (d=)";
+    if (value === "y") {
+      return "y: testing mode";
+    }
+    if (value === "s") {
+      return "s: AUID (i=) domain must exactly match SDID (d=)";
+    }
     return `${value}: unrecognized flag (ignored)`;
   });
   return descriptions.join("; ");
@@ -183,8 +204,12 @@ function describeSelectorFlags(values) {
 
 function describeServiceTypes(values) {
   const descriptions = values.map(value => {
-    if (value === "*") return "*: all service types";
-    if (value === "email") return "email: electronic mail";
+    if (value === "*") {
+      return "*: all service types";
+    }
+    if (value === "email") {
+      return "email: electronic mail";
+    }
     return `${value}: unrecognized service type (ignored)`;
   });
   return descriptions.join("; ");
@@ -192,8 +217,12 @@ function describeServiceTypes(values) {
 
 function describeHashAlgorithms(values) {
   const descriptions = values.map(value => {
-    if (value === "sha256") return "sha256: SHA-256";
-    if (value === "sha1") return "sha1: SHA-1 (historic; prohibited by RFC 8301)";
+    if (value === "sha256") {
+      return "sha256: SHA-256";
+    }
+    if (value === "sha1") {
+      return "sha1: SHA-1 (historic; prohibited by RFC 8301)";
+    }
     return `${value}: unrecognized algorithm (ignored)`;
   });
   return descriptions.join("; ");
@@ -228,14 +257,22 @@ function validateQpSection(value) {
 }
 
 function validationOverall(items) {
-  if (items.some(item => item.status === "fail")) return "FAIL";
-  if (items.some(item => item.status === "warn")) return "PASS (Warnings)";
+  if (items.some(item => item.status === "fail")) {
+    return "FAIL";
+  }
+  if (items.some(item => item.status === "warn")) {
+    return "PASS (Warnings)";
+  }
   return "PASS";
 }
 
 function formatKeyTypeTag(value) {
-  if (value === undefined) return "rsa (default)";
-  if (value === "") return "(empty / invalid)";
+  if (value === undefined) {
+    return "rsa (default)";
+  }
+  if (value === "") {
+    return "(empty / invalid)";
+  }
   return value;
 }
 
@@ -378,7 +415,9 @@ function addRfc6376Checks(checks, info) {
     ? validation("info","Unknown tags",`${unknown.join(", ")} (ignored)`)
     : validation("info","Unknown tags","None"));
 
-  for (let index=startIndex; index<checks.length; index++) checks[index].category = "dkim";
+  for (let index=startIndex; index<checks.length; index++) {
+    checks[index].category = "dkim";
+  }
 }
 
 /* Decode/import a non-empty RSA DKIM p= value. */
