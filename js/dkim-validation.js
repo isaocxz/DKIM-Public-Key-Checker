@@ -418,7 +418,12 @@ function classifyDkimTags(tags) {
 
 /* Focused RFC 6376 Section 3.2 and Section 3.6.1 checks. */
 function addRfc6376Checks(checks, info) {
-  const first = info.fields.find(field => field.name);
+  // RFC 6376 Section 3.2's tag-list grammar has no provision for an empty
+  // element before the first tag-spec (only one optional trailing ";" is
+  // permitted), so parseTags records every other position it saw -- valid,
+  // invalid-name, or fully empty alike -- in order. The literal first
+  // element of that list is therefore what "v= MUST be the first tag" means.
+  const first = info.fields[0];
   const malformed = info.fields.filter(field => field.malformed);
   const {deprecated, unknown} = classifyDkimTags(info.tags);
 

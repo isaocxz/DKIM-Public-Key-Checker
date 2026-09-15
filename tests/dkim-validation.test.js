@@ -91,6 +91,33 @@ describe("RFC 6376 validation", () => {
     expect(checks.every(check => check.category === "dkim")).toBe(true);
   });
 
+  test("fails v= tag position when a malformed field precedes it", () => {
+    const checks = rfcChecks("=foo;v=DKIM1;p=AAAA");
+
+    expect(checkResult(checks, "v= tag position")).toMatchObject({
+      status:"fail",
+      detail:"v= is present but is not the first tag"
+    });
+  });
+
+  test("fails v= tag position when an empty leading element precedes it", () => {
+    const checks = rfcChecks(";v=DKIM1;p=AAAA");
+
+    expect(checkResult(checks, "v= tag position")).toMatchObject({
+      status:"fail",
+      detail:"v= is present but is not the first tag"
+    });
+  });
+
+  test("passes v= tag position when v= genuinely is first", () => {
+    const checks = rfcChecks("v=DKIM1; p=AAAA");
+
+    expect(checkResult(checks, "v= tag position")).toMatchObject({
+      status:"pass",
+      detail:"First tag"
+    });
+  });
+
   test("reports lowercase g= as deprecated instead of unknown", () => {
     const checks = rfcChecks("v=DKIM1; g=*; p=AAAA");
 
