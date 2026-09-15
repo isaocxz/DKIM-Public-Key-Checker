@@ -11,6 +11,10 @@ function txtPresentationInfo(raw) {
   let match;
   while ((match = re.exec(text)) !== null) {
     // DNS JSON presentation can contain escaped quote/backslash sequences.
+    // RFC 1035 also defines \DDD decimal-byte escapes for non-printable
+    // bytes, intentionally left undecoded: the only tag that could carry
+    // such a byte is the free-text, informational-only n= tag, so this
+    // affects at most a notes display, not DKIM validation.
     chunks.push(match[1].replace(/\\"/g,'"').replace(/\\\\/g,'\\'));
   }
   if (!chunks.length) {
