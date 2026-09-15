@@ -53,6 +53,12 @@ describe("DKIM tag parsing", () => {
     expect(countPChunks(["v=DKIM1; p=AAAA"])).toBe(1);
   });
 
+  test("counts p= chunks even when the tag name is split across a chunk boundary", () => {
+    expect(countPChunks(["v=DKIM1; p", "=AAAA"])).toBe(2);
+    expect(countPChunks(["v=DKIM1; p=AB", "CD"])).toBe(2);
+    expect(countPChunks(["v=DKIM1; ", "p=AAAA"])).toBe(1);
+  });
+
   test("rejects a tag name beginning with a digit", () => {
     const result = parseTags("v=DKIM1; 1test=value; p=AAAA");
 

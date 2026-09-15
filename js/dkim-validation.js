@@ -22,33 +22,33 @@ function txtPresentationInfo(raw) {
 
 /* Count TXT character-strings occupied by p= and its continuation. */
 function countPChunks(chunks) {
-  // Count DNS character-strings that contain any part of the p= value.
-  // Treating ";" as an unconditional tag separator here is safe: the
-  // Base64 alphabet (A-Za-z0-9+/=) never contains ";", so it cannot
-  // appear inside a well-formed p= value.
-  let started = false;
+  // Locate the p= tag-spec once in the joined record (chunks.join("") is
+  // always equal to txtPresentationInfo's `logical`) instead of matching
+  // each chunk in isolation, so a "p=" that straddles a chunk boundary is
+  // still found. Treating ";" as an unconditional tag separator here is
+  // safe: the Base64 alphabet (A-Za-z0-9+/=) never contains ";", so it
+  // cannot appear inside a well-formed p= value.
+  const logical = chunks.join("");
+  const tagMatch = /(?:^|;)\s*p\s*=/.exec(logical);
+  if (!tagMatch) {
+    return 0;
+  }
+
+  // The chunk containing p= counts even if its value begins empty; it is
+  // the first character-string carrying the p tag/value.
+  const start = tagMatch.index + tagMatch[0].search(/p/);
+  const semicolonIndex = logical.indexOf(";", start);
+  // Include the terminating ";" itself: the character-string that carries
+  // it is still part of the p= tag-spec's chunk span.
+  const end = semicolonIndex === -1 ? logical.length : semicolonIndex + 1;
+
   let count = 0;
+  let cursor = 0;
   for (const chunk of chunks) {
-    let part = chunk;
-    if (!started) {
-      const match = part.match(/(?:^|;)\s*p\s*=\s*(.*)$/);
-      if (!match) {
-        continue;
-      }
-      started = true;
-      part = match[1];
-      // The chunk containing p= counts even if its value begins empty;
-      // it is the first character-string carrying the p tag/value.
+    if (cursor + chunk.length > start && cursor < end) {
       count++;
-      if (part.includes(";")) {
-        break;
-      }
-      continue;
     }
-    count++;
-    if (part.includes(";")) {
-      break;
-    }
+    cursor += chunk.length;
   }
   return count;
 }
