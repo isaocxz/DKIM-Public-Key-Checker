@@ -194,6 +194,35 @@ function parseColonTokenList(value, {allowAsterisk=false}={}) {
   return {values, hasEmptyItem, invalid};
 }
 
+/*
+ * RFC 6376 Section 3.6.1's h=/s=/t= tags all share this colon-separated
+ * token-list grammar and all say unrecognized tokens MUST be ignored (not
+ * failed) -- only an empty list item or a syntactically invalid token is a
+ * genuine violation. Each tag's own pass/warn/fail meaning still differs
+ * (see the callers), so only that common syntax check lives here.
+ */
+function parseTagValueList(tagLetter, checkLabel, value, {allowAsterisk=false}={}) {
+  const {values, hasEmptyItem, invalid} = parseColonTokenList(value, {allowAsterisk});
+  if (hasEmptyItem) {
+    const detail = value === ""
+      ? `${tagLetter}= is present but empty`
+      : `${tagLetter}= contains an empty list item`;
+    return {ok:false, check:{status:"fail", check:checkLabel, detail, category:"dkim"}};
+  }
+  if (invalid.length) {
+    return {
+      ok:false,
+      check:{
+        status:"fail",
+        check:checkLabel,
+        detail:`Invalid token(s): ${invalid.join(", ")}`,
+        category:"dkim"
+      }
+    };
+  }
+  return {ok:true, values};
+}
+
 function describeSelectorFlags(values) {
   const descriptions = values.map(value => {
     if (value === "y") {
@@ -243,24 +272,11 @@ function validateHashAlgorithmsTag(value) {
     };
   }
 
-  const {values, hasEmptyItem, invalid} = parseColonTokenList(value);
-  if (hasEmptyItem) {
-    let detail;
-    if (value === "") {
-      detail = "h= is present but empty";
-    } else {
-      detail = "h= contains an empty list item";
-    }
-    return {status:"fail", check:"Hash algorithms", detail, category:"dkim"};
+  const parsed = parseTagValueList("h", "Hash algorithms", value);
+  if (!parsed.ok) {
+    return parsed.check;
   }
-  if (invalid.length) {
-    return {
-      status:"fail",
-      check:"Hash algorithms",
-      detail:`Invalid token(s): ${invalid.join(", ")}`,
-      category:"dkim"
-    };
-  }
+  const {values} = parsed;
 
   const includesSha1 = values.includes("sha1");
   const includesSha256 = values.includes("sha256");
@@ -286,24 +302,11 @@ function validateServiceTypeTag(value) {
     };
   }
 
-  const {values, hasEmptyItem, invalid} = parseColonTokenList(value, {allowAsterisk:true});
-  if (hasEmptyItem) {
-    let detail;
-    if (value === "") {
-      detail = "s= is present but empty";
-    } else {
-      detail = "s= contains an empty list item";
-    }
-    return {status:"fail", check:"Service type", detail, category:"dkim"};
+  const parsed = parseTagValueList("s", "Service type", value, {allowAsterisk:true});
+  if (!parsed.ok) {
+    return parsed.check;
   }
-  if (invalid.length) {
-    return {
-      status:"fail",
-      check:"Service type",
-      detail:`Invalid token(s): ${invalid.join(", ")}`,
-      category:"dkim"
-    };
-  }
+  const {values} = parsed;
 
   const appliesToEmail = values.includes("*") || values.includes("email");
   const description = `s=${values.join(":")}; ${describeServiceTypes(values)}`;
@@ -333,24 +336,11 @@ function validateSelectorFlagsTag(value) {
     };
   }
 
-  const {values, hasEmptyItem, invalid} = parseColonTokenList(value);
-  if (hasEmptyItem) {
-    let detail;
-    if (value === "") {
-      detail = "t= is present but empty";
-    } else {
-      detail = "t= contains an empty list item";
-    }
-    return {status:"fail", check:"Selector flags", detail, category:"dkim"};
+  const parsed = parseTagValueList("t", "Selector flags", value);
+  if (!parsed.ok) {
+    return parsed.check;
   }
-  if (invalid.length) {
-    return {
-      status:"fail",
-      check:"Selector flags",
-      detail:`Invalid token(s): ${invalid.join(", ")}`,
-      category:"dkim"
-    };
-  }
+  const {values} = parsed;
   return {
     status:"info",
     check:"Selector flags",
