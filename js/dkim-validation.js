@@ -23,6 +23,9 @@ function txtPresentationInfo(raw) {
 /* Count TXT character-strings occupied by p= and its continuation. */
 function countPChunks(chunks) {
   // Count DNS character-strings that contain any part of the p= value.
+  // Treating ";" as an unconditional tag separator here is safe: the
+  // Base64 alphabet (A-Za-z0-9+/=) never contains ";", so it cannot
+  // appear inside a well-formed p= value.
   let started = false;
   let count = 0;
   for (const chunk of chunks) {
