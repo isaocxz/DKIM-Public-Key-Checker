@@ -66,6 +66,10 @@ function parseTags(record) {
     if (!part.trim()) {
       // RFC 6376 permits one optional trailing semicolon, but an empty
       // tag-spec anywhere else is not part of the tag-list grammar.
+      // This looks like a loose approximation but is exact: the last
+      // split() part can only be empty when `logical` ends in ";", so
+      // exempting just that index is equivalent to stripping one trailing
+      // ";" before splitting, for any number of trailing semicolons.
       const isOptionalTrailingSemicolon =
         partIndex === parts.length - 1 && logical.includes(";");
       if (!isOptionalTrailingSemicolon) {
@@ -477,6 +481,10 @@ function addRfc6376Checks(checks, info) {
   }
 
   // h= is OPTIONAL. Empty h= is invalid because the grammar requires at least one algorithm.
+  // An all-unrecognized h= list intentionally PASSES, unlike s= failing on
+  // one below: RFC 6376 3.6.1 says unrecognized hash algorithms MUST be
+  // ignored, while s= separately requires ignoring the whole record when
+  // the service type is absent. Not the same rule; not an inconsistency.
   checks.push(validateHashAlgorithmsTag(info.tags.h));
 
   // k= is OPTIONAL and defaults to rsa only when omitted. An explicitly

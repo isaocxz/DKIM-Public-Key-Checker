@@ -44,6 +44,12 @@ function extractDkimLookupTarget(input) {
     header = header.replace(/^DKIM-Signature:/i, "").trim();
   }
 
+  // Intentionally does not reuse dkim-validation.js's parseTags, even
+  // though both parse the same RFC 6376 3.2 tag-list grammar: parseTags
+  // first strips DNS-TXT-style '"..."' quoting, but a DKIM-Signature
+  // header is raw unfolded text that can legitimately contain a literal
+  // '"' (e.g. a z= tag copying a Subject: header) -- parseTags would
+  // misread that as TXT-record quoting and silently drop d=/s=.
   const values = { d: [], s: [] };
   for (const part of header.split(";")) {
     if (!part.trim()) continue;
